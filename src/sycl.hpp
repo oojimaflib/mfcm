@@ -1,5 +1,5 @@
 /***********************************************************************
- * mfcm sycl.cpp
+ * mfcm sycl.hpp
  *
  * Copyright (C) Edenvale Young Associates 2022
  * 
