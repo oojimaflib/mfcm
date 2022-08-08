@@ -20,7 +20,7 @@
 #define mfcm_Output_OutputFile_hpp
 
 #include "OutputFormat.hpp"
-#include "TemporalScheme/TimeParameters.hpp"
+#include "TimeParameters.hpp"
 
 template<typename OutputObject>
 class OutputFile

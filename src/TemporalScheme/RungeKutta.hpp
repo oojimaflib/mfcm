@@ -272,11 +272,14 @@ public:
 
   using TimeType = typename Solver::TimeType;
   using SolverType = Solver;
+  using OutputFileType = FieldOutputFile<TimeType, typename SolverType::State::FieldType>;
   
 protected:
   
   std::shared_ptr<SolverType> solver_;
 
+  std::vector<OutputFileType> outputs_;
+  
   bool step_debugging_;
 
 public:
@@ -298,7 +301,9 @@ public:
       solver_(std::make_shared<SolverType>(queue, coeffs.nsteps() + 1,
 					   tparams)),
       step_debugging_(step_debugging)
-  {}
+  {
+    outputs_.push_back(OutputFileType("state", tparams));
+  }
 
   /**
      Constructor from a set of named coefficients
@@ -317,7 +322,9 @@ public:
       solver_(std::make_shared<SolverType>(queue, runge_kutta_named_coefficient_sets_.at(named_coeffs).nsteps() + 1,
 					   tparams)),
       step_debugging_(step_debugging)
-  {}
+  {
+    outputs_.push_back(OutputFileType("state", tparams));
+  }
 
 protected:
   
@@ -432,8 +439,9 @@ public:
   */
   virtual void do_outputs(const TimeType& time_now)
   {
-    OutputFile<TimeType, typename SolverType::State::FieldType> state_out("state", this->time_parameters());
-    state_out.output(solver_->state_output_vector(), time_now);
+    for (auto&& output : outputs_) {
+      output.timed_output(solver_->state_output_vector(), time_now);
+    }
   }
 
   /**
