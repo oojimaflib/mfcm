@@ -18,6 +18,9 @@
 
 #include "Config.hpp"
 
+#include <boost/program_options.hpp>
+namespace bpo = boost::program_options;
+
 template<typename T>
 std::vector<T> split_string(const std::string& in,
 			    const std::string& delimiters)
@@ -67,34 +70,11 @@ std::array<T, D> split_string(const std::string& in,
 
 GlobalConfig* GlobalConfig::global_config_ = nullptr;
 
-GlobalConfig::GlobalConfig(int argc, char* argv[])
+GlobalConfig::GlobalConfig(const stdfs::path& base_path,
+			   const Config& config)
+  : simulation_base_path_(base_path),
+    config_(config)
 {
-  if (argc != 2) {
-    std::cerr << "ERROR: Expected one simulation file as argument."
-	      << std::endl;
-    throw std::runtime_error("Wrong argument list");
-  }
-
-  std::string config_file_path_str = argv[1];
-  stdfs::path config_file_path(config_file_path_str);
-  if (config_file_path.has_filename()) {
-    try {
-      config_filename_ = config_file_path.filename();
-      std::cout << config_filename_ << std::endl;
-      simulation_base_path_ = config_file_path.parent_path();
-    } catch (std::exception& e) {
-      std::cerr << e.what() << std::endl;
-      throw e;
-    }
-  } else {
-    std::cerr << "Could not determine filename from " << config_file_path << std::endl;
-  }
-
-  std::cout << "Simulation base directory: " << simulation_base_path_ << std::endl;
-  std::cout << "Configuration file name: " << config_filename_ << std::endl;
-
-  bpt::read_mf((simulation_base_path_ / config_filename_).native(),
-	       config_);
 }
 
 GlobalConfig& GlobalConfig::instance(void)
@@ -112,7 +92,81 @@ void GlobalConfig::init(int argc, char* argv[])
   }
   std::cout << "Initialising configuration. "
 	    << argc << " argument(s). Config file: " << argv[1] << std::endl;
-  global_config_ = new GlobalConfig(argc, argv);
+  bpo::options_description opts_desc("Command-line flags");
+  opts_desc.add_options()
+    ("help", "produce help message")
+    ("base-path", bpo::value<std::string>(), "simulation base path")
+    ("accel-platform", bpo::value<std::string>(), "accelerator platform")
+    ("accel-device", bpo::value<std::string>(), "accelerator device")
+    ;
+
+  bpo::options_description hidden_desc("Hidden options");
+  hidden_desc.add_options()
+    ("config-file", bpo::value<std::vector<std::string>>(),
+     "configuration file name")
+    ;
+  
+  bpo::options_description all_desc("Allowed options");
+  all_desc.add(opts_desc).add(hidden_desc);
+  
+  bpo::positional_options_description pos_opts;
+  pos_opts.add("config-file", -1);
+  
+  bpo::variables_map bpo_vm;
+  bpo::store(bpo::command_line_parser(argc, argv)
+	     .options(all_desc).positional(pos_opts).run(), bpo_vm);
+  bpo::notify(bpo_vm);
+
+  if (bpo_vm.count("help")) {
+    std::cout << opts_desc << std::endl;
+    throw std::runtime_error("User did not request simulation.");
+  }
+
+  std::string config_file_path_str;
+  if (bpo_vm.count("config-file")) {
+    auto config_file_vec = bpo_vm["config-file"].as<std::vector<std::string>>();
+    if (config_file_vec.size() > 1) {
+      std::cerr << "Multiple input files not yet supported." << std::endl;
+      throw std::runtime_error("Multiple input files not yet supported.");
+    } else {
+      config_file_path_str = config_file_vec.at(0);
+    }
+  } else {
+    std::cerr << "No input configuration specified." << std::endl;
+    throw std::runtime_error("No input configuration specified.");
+  }
+  
+  stdfs::path config_file_path(config_file_path_str);
+  stdfs::path base_path = ".";
+  if (bpo_vm.count("base-path")) {
+    base_path = bpo_vm["base-path"].as<std::string>();
+    if (not config_file_path.is_absolute()) {
+      config_file_path = base_path / config_file_path;
+    }
+  } else {
+    if (config_file_path.is_absolute()) {
+      base_path = config_file_path.parent_path();
+    } else {
+      base_path = ".";
+    }
+  }
+  
+  std::cout << "Simulation base directory: " << base_path << std::endl;
+  std::cout << "Configuration file name: " << config_file_path << std::endl;
+
+  Config config;
+  bpt::read_mf(config_file_path.native(), config);
+
+  if (bpo_vm.count("accel-platform")) {
+    config.put<std::string>("device.platform",
+			    bpo_vm["accel-platform"].as<std::string>());
+  }
+  if (bpo_vm.count("accel-device")) {
+    config.put<std::string>("device.device",
+			    bpo_vm["accel-device"].as<std::string>());
+  }
+  
+  global_config_ = new GlobalConfig(base_path, config);
 }
 
 const Config& GlobalConfig::device_configuration(void) const

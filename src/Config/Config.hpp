@@ -53,7 +53,8 @@ protected:
      Get configuration from command-line arguments and files specified
      on the command line.
    */
-  GlobalConfig(int argc, char* argv[]);
+  GlobalConfig(const stdfs::path& base_path,
+	       const Config& config);
 
   /**
      Static pointer to the singleton GlobalConfig object.
@@ -63,7 +64,7 @@ protected:
   /**
      Filename from which the configuration has been read.
    */
-  stdfs::path config_filename_;
+  // stdfs::path config_filename_;
   
   /**
      "Base" path of the simulation. File paths in the configuration
