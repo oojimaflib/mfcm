@@ -77,7 +77,7 @@ void TimeParser<T>::parse_configuration(const Config& conf)
       }
       throw std::runtime_error("Unknown time unit.");
     }
-    throw std::runtime_error("Unknown time unit.");
+    // throw std::runtime_error("Unknown time unit.");
   }
 }
 
