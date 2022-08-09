@@ -144,11 +144,7 @@ void GlobalConfig::init(int argc, char* argv[])
       config_file_path = base_path / config_file_path;
     }
   } else {
-    if (config_file_path.is_absolute()) {
-      base_path = config_file_path.parent_path();
-    } else {
-      base_path = ".";
-    }
+    base_path = config_file_path.parent_path();
   }
   
   std::cout << "Simulation base directory: " << base_path << std::endl;
