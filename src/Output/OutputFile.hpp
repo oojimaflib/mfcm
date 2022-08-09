@@ -22,7 +22,6 @@
 #include "OutputFormat.hpp"
 #include "TimeParameters.hpp"
 
-template<typename OutputObject>
 class OutputFile
 {
 protected:
@@ -75,12 +74,12 @@ public:
 };
 
 template<typename Mesh>
-class MeshOutputFile : public OutputFile<Mesh>
+class MeshOutputFile : public OutputFile
 {
 public:
 
   MeshOutputFile(const std::string& name)
-    : OutputFile<Mesh>(name)
+    : OutputFile(name)
   {}
 
   virtual ~MeshOutputFile(void) {}
@@ -110,8 +109,8 @@ public:
   
 };
 
-template<typename TT, typename OutputObject>
-class TimedOutputFile : public OutputFile<OutputObject>
+template<typename TT>
+class TimedOutputFile : public OutputFile
 {
 public:
   
@@ -130,7 +129,7 @@ public:
   
   TimedOutputFile(const std::string& name,
 		  const std::shared_ptr<TimeParameters<TimeType>> tparams)
-    : OutputFile<OutputObject>(name),
+    : OutputFile(name),
       time_parameters_(tparams)
   {
     const Config& conf =
@@ -160,11 +159,73 @@ public:
 
   virtual ~TimedOutputFile(void) {}
 
-  virtual void timed_output(const std::vector<OutputObject*> oo_ptrs,
-			    const TimeType& time_now) const = 0;
+  virtual void timed_output(const TimeType& time_now) const = 0;
 
 };
 
+template<typename Solver>
+class FieldOutputFile : public TimedOutputFile<typename Solver::TimeType>
+{
+public:
+
+  using SolverType = Solver;
+  using TimeType = typename Solver::TimeType;
+  using ValueType = typename Solver::ValueType;
+  using MeshType = typename Solver::MeshType;
+
+private:
+  
+  std::shared_ptr<SolverType> solver_;
+  
+  template<MeshComponent C>
+  void output_field_if_present(const std::string& name,
+			       const stdfs::path& filename) const
+  {
+    using FieldType = Field<ValueType,MeshType,C>;
+    FieldType* fptr = solver_->template get_output_field_ptr<C>(name);
+    if (fptr) {
+      auto output_func = std::make_shared<FieldOutputFunction<FieldType>>(fptr);
+      this->output_no_ += 1;
+      this->output(output_func, filename);
+    }    
+  }
+  
+public:
+
+  FieldOutputFile(const std::string& name,
+		  const std::shared_ptr<TimeParameters<TimeType>> tparams,
+		  std::shared_ptr<SolverType>& solver)
+    : TimedOutputFile<TimeType>(name, tparams),
+      solver_(solver)
+  {}
+
+  virtual ~FieldOutputFile(void)
+  {}
+
+  virtual void timed_output(const TimeType& time_now) const
+  {
+    if (this->enabled() and
+	time_now >= this->start_time_ + this->output_every_ * this->output_no_) {
+      // Calculate filename and create output directory.
+      stdfs::path fn = this->output_filename_.native() + "_" +
+	std::to_string(time_now) + ".csv";
+      std::cout << "Writing output file " << std::quoted(this->name())
+		<< " to " << std::quoted(fn.native()) << std::endl;
+      if (stdfs::create_directories(fn.parent_path())) {
+	std::cout << "Created output directory "
+		  << std::quoted(fn.parent_path().native()) << std::endl;
+      }
+
+      std::string output_field_name = "h";
+      this->output_field_if_present<MeshComponent::Cell>(output_field_name, fn);
+      this->output_field_if_present<MeshComponent::Face>(output_field_name, fn);
+      this->output_field_if_present<MeshComponent::Vertex>(output_field_name, fn);
+    }
+  }
+  
+};
+
+/*
 template<typename TT,
 	 typename Field>
 class FieldOutputFile : public TimedOutputFile<TT, Field>
@@ -182,6 +243,11 @@ public:
   
   virtual ~FieldOutputFile(void) {}
 
+  virtual std::vector<std::string> output_field_names(void) const
+  {
+    return { "h", "u", "v" };
+  }
+
   virtual void timed_output(const std::vector<FieldType*> field_ptrs,
 			    const TimeType& time_now) const
   {
@@ -198,10 +264,11 @@ public:
 
       auto output_func = std::make_shared<FieldOutputFunctionType>(field_ptrs);
       this->output_no_ += 1;
-      return this->output(output_func, fn);
+      this->output(output_func, fn);
     }
   }
 
 };
+*/
 
 #endif

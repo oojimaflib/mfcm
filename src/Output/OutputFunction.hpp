@@ -131,6 +131,18 @@ private:
 
 public:
   
+  FieldOutputFunction(FieldType* field_ptr)
+    : TypedOutputFunction<ValueType>(),
+      field_ptrs_()
+  {
+    field_ptrs_.push_back(field_ptr);
+    for (auto&& fptr : field_ptrs_) {
+      bool on_device = fptr->is_on_device();
+      field_locations_.push_back(on_device);
+      if (on_device) fptr->move_to_host();
+    }
+  }
+
   FieldOutputFunction(const std::vector<FieldType*> field_ptrs)
     : TypedOutputFunction<ValueType>(),
       field_ptrs_(field_ptrs)

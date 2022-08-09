@@ -115,14 +115,33 @@ public:
     return lhs;
   }
   
-  CellField<ValueType,MeshType>& h(void) { return h_; }
-  CellField<ValueType,MeshType>& u(void) { return u_; }
-  CellField<ValueType,MeshType>& v(void) { return v_; }
+  FieldType& h(void) { return h_; }
+  FieldType& u(void) { return u_; }
+  FieldType& v(void) { return v_; }
 
-  const CellField<ValueType,MeshType>& h(void) const { return h_; }
-  const CellField<ValueType,MeshType>& u(void) const { return u_; }
-  const CellField<ValueType,MeshType>& v(void) const { return v_; }
+  const FieldType& h(void) const { return h_; }
+  const FieldType& u(void) const { return u_; }
+  const FieldType& v(void) const { return v_; }
 
+  template<typename OutputFieldType>
+  OutputFieldType* get_output_field_ptr(const std::string& name)
+  {
+    return nullptr;
+  }
+
+  template<>
+  FieldType* get_output_field_ptr<FieldType>(const std::string& name)
+  {
+    if (name == "h") {
+      return &h_;
+    } else if (name == "u") {
+      return &u_;
+    } else if (name == "v") {
+      return &v_;
+    }
+    return nullptr;
+  }
+  
   void calculate_spatial_derivatives(SaintVenantState<ValueType,MeshType>& dUdx,
 				     SaintVenantState<ValueType,MeshType>& dUdy);
 

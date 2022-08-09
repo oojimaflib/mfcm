@@ -115,6 +115,15 @@ public:
     return U_.at(state_no)->max_control_number(timestep);
   }
 
+  template<MeshComponent C>
+  Field<ValueType,MeshType,C>* get_output_field_ptr(const std::string& name)
+  {
+    using OutputFieldType = Field<ValueType,MeshType,C>;
+    OutputFieldType* ptr = U_.at(0)->template get_output_field_ptr<OutputFieldType>(name);
+    if (ptr) return ptr;
+    return nullptr;
+  }
+  
   std::vector<typename State::FieldType*> state_output_vector(void)
   {
     return {

@@ -272,7 +272,7 @@ public:
 
   using TimeType = typename Solver::TimeType;
   using SolverType = Solver;
-  using OutputFileType = FieldOutputFile<TimeType, typename SolverType::State::FieldType>;
+  using OutputFileType = FieldOutputFile<SolverType>;
   
 protected:
   
@@ -302,7 +302,7 @@ public:
 					   tparams)),
       step_debugging_(step_debugging)
   {
-    outputs_.push_back(OutputFileType("state", tparams));
+    outputs_.push_back(OutputFileType("state", tparams, solver_));
   }
 
   /**
@@ -323,7 +323,7 @@ public:
 					   tparams)),
       step_debugging_(step_debugging)
   {
-    outputs_.push_back(OutputFileType("state", tparams));
+    outputs_.push_back(OutputFileType("state", tparams, solver_));
   }
 
 protected:
@@ -440,7 +440,7 @@ public:
   virtual void do_outputs(const TimeType& time_now)
   {
     for (auto&& output : outputs_) {
-      output.timed_output(solver_->state_output_vector(), time_now);
+      output.timed_output(time_now);
     }
   }
 
