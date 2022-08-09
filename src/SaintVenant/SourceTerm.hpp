@@ -36,6 +36,8 @@ public:
   using Constants = SaintVenantConstants<ValueType,MeshType>;
   using Fluxes = SaintVenantFluxes<ValueType,MeshType>;
   
+public:
+
   SaintVenantSourceTerm(void)
   {}
 
@@ -51,6 +53,45 @@ public:
 			      const std::shared_ptr<TimeParameters<TimeType>>& tp_ptr)
   {
     // Do nothing by default
+  }
+
+  virtual Field<ValueType,MeshType,MeshComponent::Cell>*
+  get_output_cell_field_ptr(const std::string& name)
+  {
+    return nullptr;
+  }
+  
+  virtual Field<ValueType,MeshType,MeshComponent::Face>*
+  get_output_face_field_ptr(const std::string& name)
+  {
+    return nullptr;
+  }
+  
+  virtual Field<ValueType,MeshType,MeshComponent::Vertex>*
+  get_output_vertex_field_ptr(const std::string& name)
+  {
+    return nullptr;
+  }
+
+  template<MeshComponent C>
+  Field<ValueType,MeshType,C>* get_output_field_ptr(const std::string& name);
+
+  template<>
+  Field<ValueType,MeshType,MeshComponent::Cell>* get_output_field_ptr(const std::string& name)
+  {
+    return this->get_output_cell_field_ptr(name);
+  }
+  
+  template<>
+  Field<ValueType,MeshType,MeshComponent::Face>* get_output_field_ptr(const std::string& name)
+  {
+    return this->get_output_face_field_ptr(name);
+  }
+  
+  template<>
+  Field<ValueType,MeshType,MeshComponent::Vertex>* get_output_field_ptr(const std::string& name)
+  {
+    return this->get_output_vertex_field_ptr(name);
   }
   
 };

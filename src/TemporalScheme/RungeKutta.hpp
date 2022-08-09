@@ -302,7 +302,10 @@ public:
 					   tparams)),
       step_debugging_(step_debugging)
   {
-    outputs_.push_back(OutputFileType("state", tparams, solver_));
+    // outputs_.push_back(OutputFileType("state", tparams, solver_));
+    for (auto&& name : GlobalConfig::instance().output_files_list()) {
+      outputs_.push_back(OutputFileType(name, tparams, solver_));
+    }
   }
 
   /**
@@ -323,7 +326,10 @@ public:
 					   tparams)),
       step_debugging_(step_debugging)
   {
-    outputs_.push_back(OutputFileType("state", tparams, solver_));
+    for (auto&& name : GlobalConfig::instance().output_files_list()) {
+      outputs_.push_back(OutputFileType(name, tparams, solver_));
+    }
+    // outputs_.push_back(OutputFileType("state", tparams, solver_));
   }
 
 protected:

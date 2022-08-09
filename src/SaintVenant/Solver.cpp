@@ -39,10 +39,11 @@ SaintVenantSolver(const std::shared_ptr<sycl::queue>& queue,
     constants_(std::make_shared<Constants>(mesh_, true))
 {
   U_.push_back(std::make_shared<State>(mesh_));
-  dUdt_.push_back(std::make_shared<State>(mesh_, "d", "⁄dt"));
+  dUdt_.push_back(std::make_shared<State>(0.0, mesh_, "d", "⁄dt"));
   for (size_t i = 1; i < no_of_states; ++i) {
-    U_.push_back(std::make_shared<State>(*(U_.at(0)), "", std::to_string(i)));
-    dUdt_.push_back(std::make_shared<State>(mesh_, "", std::to_string(i)));
+    const State& U0 = *(U_.at(0));
+    U_.push_back(std::make_shared<State>(0.0, mesh_, "", std::to_string(i)));
+    dUdt_.push_back(std::make_shared<State>(0.0, mesh_, "", std::to_string(i)));
   }
 
   /*
@@ -50,8 +51,8 @@ SaintVenantSolver(const std::shared_ptr<sycl::queue>& queue,
   cf.output({ &(U_[0]->h()), &(U_[0]->u()), &(U_[0]->v()) });
   */
   
-  dUdx_ = std::make_shared<State>(mesh_, "d", "⁄dx");
-  dUdy_ = std::make_shared<State>(mesh_, "d", "⁄dy");
+  dUdx_ = std::make_shared<State>(0.0, mesh_, "d", "⁄dx");
+  dUdy_ = std::make_shared<State>(0.0, mesh_, "d", "⁄dy");
   fluxes_ = std::make_shared<Fluxes>(mesh_, "", "flux");
 
   source_terms_.push_back(std::make_shared<ManningRoughnessSourceTerm<TT,T,Mesh>>(mesh_));

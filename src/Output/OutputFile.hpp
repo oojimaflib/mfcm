@@ -178,7 +178,7 @@ private:
   std::shared_ptr<SolverType> solver_;
   
   template<MeshComponent C>
-  void output_field_if_present(const std::string& name,
+  bool output_field_if_present(const std::string& name,
 			       const stdfs::path& filename) const
   {
     using FieldType = Field<ValueType,MeshType,C>;
@@ -187,7 +187,9 @@ private:
       auto output_func = std::make_shared<FieldOutputFunction<FieldType>>(fptr);
       this->output_no_ += 1;
       this->output(output_func, filename);
-    }    
+      return true;
+    }
+    return false;
   }
   
 public:
@@ -216,10 +218,13 @@ public:
 		  << std::quoted(fn.parent_path().native()) << std::endl;
       }
 
-      std::string output_field_name = "h";
-      this->output_field_if_present<MeshComponent::Cell>(output_field_name, fn);
-      this->output_field_if_present<MeshComponent::Face>(output_field_name, fn);
-      this->output_field_if_present<MeshComponent::Vertex>(output_field_name, fn);
+      std::string output_field_name = this->name_;
+      if (this->output_field_if_present<MeshComponent::Cell>(output_field_name, fn)) return;
+      if (this->output_field_if_present<MeshComponent::Face>(output_field_name, fn)) return;
+      if (this->output_field_if_present<MeshComponent::Vertex>(output_field_name, fn)) return;
+      std::cerr << "Could not find field named "
+		<< std::quoted(output_field_name) << " in output." << std::endl;
+      throw std::runtime_error("Could not output field.");
     }
   }
   

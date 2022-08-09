@@ -40,6 +40,10 @@ public:
     template Accessor<sycl::access::mode::read,
 		      sycl::access::target::global_buffer>;
 
+  using CellWriteAccessor = typename FieldType::
+    template Accessor<sycl::access::mode::write,
+		      sycl::access::target::global_buffer>;
+
   using ReadWriteAccessor = typename FieldType::
     template Accessor<sycl::access::mode::read_write,
 		      sycl::access::target::global_buffer>;
@@ -54,6 +58,9 @@ private:
   CellReadAccessor n_deep_;
   CellReadAccessor d_shallow_;
   CellReadAccessor d_deep_;
+
+  CellWriteAccessor nh_;
+  CellWriteAccessor Sf_;
   
   ReadWriteAccessor dudt_;
   ReadWriteAccessor dvdt_;
@@ -69,6 +76,8 @@ public:
 			       const FieldType& n_deep,
 			       const FieldType& d_shallow,
 			       const FieldType& d_deep,
+			       FieldType& nh,
+			       FieldType& Sf,
 			       State& dUdt,
 			       const TimeType& timestep);
 
@@ -102,6 +111,9 @@ private:
   FieldType d_shallow_;
   FieldType d_deep_;
 
+  FieldType nh_;
+  FieldType Sf_;
+
 public:
   
   ManningRoughnessSourceTerm(const std::shared_ptr<MeshType>& mesh,
@@ -115,7 +127,9 @@ public:
       d_shallow_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
 		 (mesh_->queue_ptr(), "d_shallow", mesh_, 0.1f, on_device)()),
       d_deep_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
-	      (mesh_->queue_ptr(), "d_deep", mesh_, 0.3f, on_device)())
+	      (mesh_->queue_ptr(), "d_deep", mesh_, 0.3f, on_device)()),
+      nh_(mesh_->queue_ptr(), "mannings_n", mesh_, 0.0f, on_device),
+      Sf_(mesh_->queue_ptr(), "friction_slope", mesh_, 0.0f, on_device)
   {
     FieldCheckFile<FieldType> cf("manning");
     cf.output({&n_shallow_, &n_deep_, &d_shallow_, &d_deep_});
@@ -124,6 +138,16 @@ public:
   virtual ~ManningRoughnessSourceTerm(void)
   {}
 
+  virtual FieldType* get_output_cell_field_ptr(const std::string& name)
+  {
+    if (name == "mannings_n") {
+      return &nh_;
+    } else if (name == "friction_slope") {
+      return &Sf_;
+    }
+    return nullptr;
+  }
+  
   virtual void apply(State& U, Constants& constants, State& dUdt,
 		     const TimeType& timestep, const TimeType& time_now,
 		     const std::shared_ptr<TimeParameters<TimeType>>& tp_ptr)
@@ -133,6 +157,7 @@ public:
       auto kernel = Kernel(cgh, U, constants,
 			   n_shallow_, n_deep_,
 			   d_shallow_, d_deep_,
+			   nh_, Sf_,
 			   dUdt, timestep);
       cgh.parallel_for(sycl::range<1>(ncells), kernel);
     });

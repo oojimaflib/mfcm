@@ -35,7 +35,25 @@ SaintVenantState(const std::shared_ptr<MeshType>& mesh,
        (mesh_->queue_ptr(), prefix + "u" + suffix, mesh_, 0.0f, on_device)()),
     v_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
        (mesh_->queue_ptr(), prefix + "v" + suffix, mesh_, 0.0f, on_device)())
-{}
+{
+  std::cout << "Creating state from field generators." << std::endl;
+}
+
+template<typename T,
+	 typename Mesh>
+SaintVenantState<T,Mesh>::
+SaintVenantState(const T& value,
+		 const std::shared_ptr<MeshType>& mesh,
+		 const std::string& prefix,
+		 const std::string& suffix,
+		 bool on_device)
+  : mesh_(mesh),
+    h_(mesh->queue_ptr(), prefix + "h" + suffix, mesh, value, on_device),
+    u_(mesh->queue_ptr(), prefix + "u" + suffix, mesh, value, on_device),
+    v_(mesh->queue_ptr(), prefix + "v" + suffix, mesh, value, on_device)
+{
+  std::cout << "Creating nil state." << std::endl;
+}
 
 template<typename T,
 	 typename Mesh>
@@ -47,7 +65,9 @@ SaintVenantState(const SaintVenantState<ValueType,MeshType>& state,
     h_(CellField<ValueType,MeshType>(prefix, state.h_, suffix)),
     u_(CellField<ValueType,MeshType>(prefix, state.u_, suffix)),
     v_(CellField<ValueType,MeshType>(prefix, state.v_, suffix))
-{}
+{
+  //std::cout << "Creating state from field copies." << std::endl;
+}
 
 template<typename T,
 	 typename Mesh>

@@ -48,6 +48,12 @@ public:
 		   const std::string& suffix = "",
 		   bool on_device = true);
 
+  SaintVenantState(const T& value,
+		   const std::shared_ptr<MeshType>& mesh,
+		   const std::string& prefix = "",
+		   const std::string& suffix = "",
+		   bool on_device = true);
+
   SaintVenantState(const SaintVenantState<ValueType,MeshType>& state,
 		   const std::string& prefix = "",
 		   const std::string& suffix = "");

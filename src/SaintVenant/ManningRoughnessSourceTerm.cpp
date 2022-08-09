@@ -29,11 +29,14 @@ ManningRoughnessSourceKernel(sycl::handler& cgh,
 			     const FieldType& n_deep,
 			     const FieldType& d_shallow,
 			     const FieldType& d_deep,
+			     FieldType& nh,
+			     FieldType& Sf,
 			     State& dUdt,
 			     const TT& timestep)
   : h_(U.h(), cgh), u_(U.u(), cgh), v_(U.v(), cgh),
     n_shallow_(n_shallow, cgh), n_deep_(n_deep, cgh),
     d_shallow_(d_shallow, cgh), d_deep_(d_deep, cgh),
+    nh_(nh, cgh), Sf_(Sf, cgh),
     dudt_(dUdt.u(), cgh), dvdt_(dUdt.v(), cgh),
     timestep_(timestep)
 {}
@@ -55,10 +58,13 @@ operator()(sycl::item<1> item) const
 				  n_deep_.data()[cell_c],
 				  sycl::smoothstep(d_shallow_.data()[cell_c],
 						   d_deep_.data()[cell_c], h));
+  nh_.data()[cell_c] = manning_n;
   if (h > 1e-6) {
     ValueType inv_h = h / (h*h + 1e-3);
     ValueType Sf = manning_n * manning_n * sycl::sqrt(u*u + v*v)
       * sycl::pow(inv_h, ValueType(4.0)/ValueType(3.0));
+
+    Sf_.data()[cell_c] = Sf;
 
     ValueType dudt = -ValueType(9.81) * Sf * u;
     ValueType dvdt = -ValueType(9.81) * Sf * v;
@@ -76,5 +82,7 @@ operator()(sycl::item<1> item) const
 
     dudt_.data()[cell_c] += dudt;
     dvdt_.data()[cell_c] += dvdt;
+  } else {
+    Sf_.data()[cell_c] = 0.0;
   }
 }

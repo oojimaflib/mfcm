@@ -121,6 +121,10 @@ public:
     using OutputFieldType = Field<ValueType,MeshType,C>;
     OutputFieldType* ptr = U_.at(0)->template get_output_field_ptr<OutputFieldType>(name);
     if (ptr) return ptr;
+    for (auto&& source_term : source_terms_) {
+      ptr = source_term->template get_output_field_ptr<C>(name);
+      if (ptr) return ptr;
+    }
     return nullptr;
   }
   

@@ -149,6 +149,11 @@ public:
   /**
      Get the configuration for an output file
   */
+  const std::vector<std::string> output_files_list(void);
+
+  /**
+     Get the configuration for an output file
+  */
   const Config& output_file_configuration(const std::string& name);
 
   /**

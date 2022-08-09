@@ -269,6 +269,25 @@ check_file_configuration(const std::string& name)
   return conf;
 }
 
+const std::vector<std::string> GlobalConfig::
+output_files_list(void)
+{
+  std::vector<std::string> configs;
+
+  // Add any defaults here
+  // configs.push_back("h");
+  
+  // Populate the vector with configurations specified by the user
+  auto crange = config_.equal_range("output");
+  for (auto it = crange.first; it != crange.second; ++it) {
+    configs.push_back(it->second.get_value<std::string>());
+  }
+
+  // TODO: make the list unique
+
+  return configs;
+}
+
 const Config& GlobalConfig::
 output_file_configuration(const std::string& name)
 {
