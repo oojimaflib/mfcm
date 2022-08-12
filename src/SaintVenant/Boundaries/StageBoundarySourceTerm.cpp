@@ -1,5 +1,5 @@
 /***********************************************************************
- * mfcm SaintVenant/Boundaries/HeadBoundarySourceTerm.cpp
+ * mfcm SaintVenant/Boundaries/StageBoundarySourceTerm.cpp
  *
  * Copyright (C) Edenvale Young Associates 2022
  * 
@@ -16,21 +16,21 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  ***********************************************************************/
 
-#include "HeadBoundarySourceTerm.hpp"
+#include "StageBoundarySourceTerm.hpp"
 
 template<typename T,
 	 typename Mesh>
-HeadBoundarySourceKernel<T,Mesh>::
-HeadBoundarySourceKernel(sycl::handler& cgh,
-			 const State& U,
-			 const Constants& K,
-			 const FieldType& hbdy0,
-			 const FieldType& hbdy1,
-			 State& dUdt,
-			 const double& timestep,
-			 const double& time_now,
-			 const double& step_length)
-  : h_(U.h(), cgh), u_(U.u(), cgh), v_(U.v(), cgh),
+StageBoundarySourceKernel<T,Mesh>::
+StageBoundarySourceKernel(sycl::handler& cgh,
+			  const State& U,
+			  const Constants& K,
+			  const FieldType& hbdy0,
+			  const FieldType& hbdy1,
+			  State& dUdt,
+			  const double& timestep,
+			  const double& time_now,
+			  const double& step_length)
+  : z_bed_(K.z_bed(), cgh), h_(U.h(), cgh), u_(U.u(), cgh), v_(U.v(), cgh),
     hbdy0_(hbdy0, cgh), hbdy1_(hbdy1, cgh),
     dhdt_(dUdt.h(), cgh), dudt_(dUdt.u(), cgh), dvdt_(dUdt.v(), cgh),
     timestep_(timestep), time_now_(time_now), step_length_(step_length)
@@ -39,13 +39,15 @@ HeadBoundarySourceKernel(sycl::handler& cgh,
 template<typename T,
 	 typename Mesh>
 void
-HeadBoundarySourceKernel<T,Mesh>::
+StageBoundarySourceKernel<T,Mesh>::
 operator()(sycl::item<1> item) const
 {
   size_t cell_c = item.get_linear_id();
 
-  ValueType h0 = hbdy0_.data()[cell_c];
-  ValueType h1 = hbdy1_.data()[cell_c];
+  ValueType z = z_bed_.data()[cell_c];
+  
+  ValueType h0 = hbdy0_.data()[cell_c] - z;
+  ValueType h1 = hbdy1_.data()[cell_c] - z;
 
   if (!(h0 != h0) and !(h1 != h1)) {
     ValueType h = h_.data()[cell_c];

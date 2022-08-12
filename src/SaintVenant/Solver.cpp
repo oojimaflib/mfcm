@@ -22,6 +22,7 @@
 
 #include "Boundaries/DischargeBoundarySourceTerm.hpp"
 #include "Boundaries/HeadBoundarySourceTerm.hpp"
+#include "Boundaries/StageBoundarySourceTerm.hpp"
 
 #include "Measure.hpp"
 
@@ -57,8 +58,9 @@ SaintVenantSolver(const std::shared_ptr<sycl::queue>& queue,
   fluxes_ = std::make_shared<Fluxes>(mesh_, "", "flux");
 
   source_terms_.push_back(std::make_shared<ManningRoughnessSourceTerm<TT,T,Mesh>>(mesh_));
-  q_boundary_ = std::make_shared<DischargeBoundarySourceTerm<TT,T,Mesh>>(mesh_);
-  h_boundary_ = std::make_shared<HeadBoundarySourceTerm<TT,T,Mesh>>(mesh_);
+  boundaries_.push_back(std::make_shared<DischargeBoundarySourceTerm<TT,T,Mesh>>(mesh_));
+  boundaries_.push_back(std::make_shared<HeadBoundarySourceTerm<TT,T,Mesh>>(mesh_));
+  boundaries_.push_back(std::make_shared<StageBoundarySourceTerm<TT,T,Mesh>>(mesh_));
 
   // Create the measures
   SaintVenantHPointMeasure<TT,T,Mesh>::create_measures(queue, time_params_, mesh_, measures_);
@@ -97,14 +99,12 @@ SaintVenantSolver<TT,T,Mesh>::update_dUdt(const size_t& state_no,
   }
 
   // Apply boundary condition terms
-  q_boundary_->apply(*(U_.at(state_no)),
-		     *(constants_),
-		     *(dUdt_.at(state_no)),
-		     timestep, time_now, time_params_);
-  h_boundary_->apply(*(U_.at(state_no)),
-		     *(constants_),
-		     *(dUdt_.at(state_no)),
-		     timestep, time_now, time_params_);
+  for (auto&& bdy : boundaries_) {
+    bdy->apply(*(U_.at(state_no)),
+	       *(constants_),
+	       *(dUdt_.at(state_no)),
+	       timestep, time_now, time_params_);
+  }
 }
 
 template<typename TT,
@@ -117,6 +117,7 @@ start_new_step(const TT& time_now,
   for (auto&& st : source_terms_) {
     st->start_new_step(*(constants_), time_now, tp_ptr);
   }
-  q_boundary_->start_new_step(*(constants_), time_now, tp_ptr);
-  h_boundary_->start_new_step(*(constants_), time_now, tp_ptr);
+  for (auto&& bdy : boundaries_) {
+    bdy->start_new_step(*(constants_), time_now, tp_ptr);
+  }
 }

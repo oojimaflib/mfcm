@@ -1,5 +1,5 @@
 /***********************************************************************
- * mfcm SaintVenant/Boundaries/DischargeBoundarySourceTerm.hpp
+ * mfcm SaintVenant/Boundaries/StageBoundarySourceTerm.hpp
  *
  * Copyright (C) Edenvale Young Associates 2022
  * 
@@ -16,15 +16,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  ***********************************************************************/
 
-#ifndef mfcm_SaintVenant_Boundaries_DischargeBoundarySourceTerm_hpp
-#define mfcm_SaintVenant_Boundaries_DischargeBoundarySourceTerm_hpp
+#ifndef mfcm_SaintVenant_StageBoundarySourceTerm_hpp
+#define mfcm_SaintVenant_StageBoundarySourceTerm_hpp
 
 #include "BoundarySourceTerm.hpp"
-#include "TimeSeries.hpp"
 
 template<typename T,
 	 typename Mesh>
-class DischargeBoundarySourceKernel
+class StageBoundarySourceKernel
 {
 public:
 
@@ -45,12 +44,14 @@ public:
 
 private:
 
+  CellReadAccessor z_bed_;
+  
   CellReadAccessor h_;
   CellReadAccessor u_;
   CellReadAccessor v_;
 
-  CellReadAccessor qbdy0_;
-  CellReadAccessor qbdy1_;
+  CellReadAccessor hbdy0_;
+  CellReadAccessor hbdy1_;
 
   ReadWriteAccessor dhdt_;
   ReadWriteAccessor dudt_;
@@ -63,16 +64,16 @@ private:
 
 public:
 
-  DischargeBoundarySourceKernel(sycl::handler& cgh,
-				const State& U,
-				const Constants& K,
-				const FieldType& qbdy0,
-				const FieldType& qbdy1,
-				State& dUdt,
-				const double& timestep,
-				const double& time_now,
-				const double& step_length);
-
+  StageBoundarySourceKernel(sycl::handler& cgh,
+			    const State& U,
+			    const Constants& K,
+			    const FieldType& hbdy0,
+			    const FieldType& hbdy1,
+			    State& dUdt,
+			    const double& timestep,
+			    const double& time_now,
+			    const double& step_length);
+  
   void operator()(sycl::item<1> item) const;
   
 };
@@ -80,9 +81,9 @@ public:
 template<typename TT,
 	 typename T,
 	 typename Mesh>
-class DischargeBoundarySourceTerm
+class StageBoundarySourceTerm
   : public BoundarySourceTerm<TT, T, Mesh,
-			      DischargeBoundarySourceKernel<T,Mesh>>
+			      StageBoundarySourceKernel<T,Mesh>>
 {
 public:
 
@@ -90,25 +91,26 @@ public:
   using ValueType = T;
   using MeshType = Mesh;
   using FieldType = CellField<ValueType,MeshType>;
-  using SelectionType = MeshSelection<MeshType,MeshComponent::Cell>;
 
   using State = SaintVenantState<ValueType,MeshType>;
   using Constants = SaintVenantConstants<ValueType,MeshType>;
 
-  using KernelType = DischargeBoundarySourceKernel<ValueType,MeshType>;
+  using KernelType = StageBoundarySourceKernel<ValueType,MeshType>;
 
 public:
 
-  DischargeBoundarySourceTerm(const std::shared_ptr<MeshType>& mesh,
-			      bool on_device = true)
+  StageBoundarySourceTerm(const std::shared_ptr<MeshType>& mesh,
+			 bool on_device = true)
     : BoundarySourceTerm<TimeType,ValueType,MeshType,KernelType>
     (mesh,
-     FieldType(mesh->queue_ptr(), "qbdy0", mesh, ValueType(0.0), on_device),
-     FieldType(mesh->queue_ptr(), "qbdy1", mesh, ValueType(0.0), on_device))
+     FieldType(mesh->queue_ptr(), "hbdy0", mesh,
+	       std::numeric_limits<ValueType>::quiet_NaN(), on_device),
+     FieldType(mesh->queue_ptr(), "hbdy1", mesh,
+	       std::numeric_limits<ValueType>::quiet_NaN(), on_device))
   {
   }
 
-  virtual ~DischargeBoundarySourceTerm(void)
+  virtual ~StageBoundarySourceTerm(void)
   {}
 
   virtual void start_new_step(Constants& constants,
@@ -117,34 +119,35 @@ public:
   {
     const TimeType& step_duration = tp_ptr->step_duration();
     const Config& conf =
-      GlobalConfig::instance().boundary_configuration("discharge");
+      GlobalConfig::instance().boundary_configuration("stage");
     this->clear_values();
     for (auto&& kv : conf) {
       std::string key = kv.first;
       std::string name = kv.second.get_value<std::string>();
-      std::cout << "Updating discharge boundary: " << name << std::endl;
+      std::cout << "Updating stage boundary: " << name << std::endl;
       MeshSelection<MeshType,MeshComponent::Cell> sel(this->mesh(),
 						      kv.second.get_child("cells"));
       
       if (key == "constant") {
 	ValueType value = kv.second.get<ValueType>("value");
-	MeshSelectionCheckFile<MeshSelection<MeshType,MeshComponent::Cell>> cf("qbdy_sel");
+	MeshSelectionCheckFile<MeshSelection<MeshType,MeshComponent::Cell>> cf("hbdy_sel");
 	cf.output(sel);
-	this->add_values(value, value, sel);
+	this->set_values(value, value, sel);
       } else if (key == "time series") {
 	const std::shared_ptr<TimeSeries<TimeType,ValueType>>& ts =
 	  TimeSeriesDatabase<TimeType,ValueType>::instance()
 	  .get_time_series_ptr(this->mesh()->queue_ptr(), tp_ptr->parser(),
 			       kv.second.get<std::string>("values"));
-	this->add_values(ts->at(time_now),
+	this->set_values(ts->at(time_now),
 			 ts->at(time_now + step_duration), sel);
       }
     }
 
-    FieldCheckFile<Field<ValueType,MeshType,MeshComponent::Cell>> cf("qbdy");
+    FieldCheckFile<Field<ValueType,MeshType,MeshComponent::Cell>> cf("hbdy");
     cf.output({ &(this->xbdy0()), &(this->xbdy1()) });
   }
   
+
 };
 
 #endif

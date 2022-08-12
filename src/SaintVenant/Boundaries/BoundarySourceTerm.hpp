@@ -106,7 +106,7 @@ public:
   {
     size_t ncells = mesh_->template object_count<MeshComponent::Cell>();
     mesh_->queue_ptr()->submit([&] (sycl::handler& cgh) {
-      auto kernel = Kernel(cgh, U,
+      auto kernel = Kernel(cgh, U, constants,
 			   xbdy0_, xbdy1_,
 			   dUdt, timestep, time_now,
 			   tp_ptr->step_duration());

@@ -23,6 +23,7 @@ template<typename T,
 DischargeBoundarySourceKernel<T,Mesh>::
 DischargeBoundarySourceKernel(sycl::handler& cgh,
 			      const State& U,
+			      const Constants& K,
 			      const FieldType& qbdy0,
 			      const FieldType& qbdy1,
 			      State& dUdt,

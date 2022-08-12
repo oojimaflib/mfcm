@@ -59,8 +59,9 @@ private:
   std::shared_ptr<Fluxes> fluxes_;
 
   std::vector<std::shared_ptr<SourceTerm>> source_terms_;
-  std::shared_ptr<SourceTerm> q_boundary_;
-  std::shared_ptr<SourceTerm> h_boundary_;
+  std::vector<std::shared_ptr<SourceTerm>> boundaries_;
+  // std::shared_ptr<SourceTerm> q_boundary_;
+  // std::shared_ptr<SourceTerm> h_boundary_;
 
   std::vector<std::shared_ptr<MeasureType>> measures_;
 

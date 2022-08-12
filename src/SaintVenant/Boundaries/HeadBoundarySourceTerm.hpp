@@ -64,6 +64,7 @@ public:
 
   HeadBoundarySourceKernel(sycl::handler& cgh,
 			   const State& U,
+			   const Constants& K,
 			   const FieldType& hbdy0,
 			   const FieldType& hbdy1,
 			   State& dUdt,
