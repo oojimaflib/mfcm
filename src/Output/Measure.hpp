@@ -19,6 +19,8 @@
 #ifndef mfcm_Output_Measure_hpp
 #define mfcm_Output_Measure_hpp
 
+#include "OutputFormat.hpp"
+
 template<typename TT,
 	 typename S>
 class Measure

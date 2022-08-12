@@ -20,6 +20,8 @@
 #define mfcm_SaintVenant_ManningRoughnessSourceTerm_hpp
 
 #include "SourceTerm.hpp"
+#include "FieldGenerator.hpp"
+#include "../Output/CheckFile.hpp"
 
 template<typename TT,
 	 typename T,

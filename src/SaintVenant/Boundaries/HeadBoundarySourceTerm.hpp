@@ -110,6 +110,41 @@ public:
   virtual ~HeadBoundarySourceTerm(void)
   {}
 
+  virtual void start_new_step(Constants& constants,
+			      const TimeType& time_now,
+			      const std::shared_ptr<TimeParameters<TimeType>>& tp_ptr)
+  {
+    const TimeType& step_duration = tp_ptr->step_duration();
+    const Config& conf =
+      GlobalConfig::instance().boundary_configuration("head");
+    this->clear_values();
+    for (auto&& kv : conf) {
+      std::string key = kv.first;
+      std::string name = kv.second.get_value<std::string>();
+      std::cout << "Updating head boundary: " << name << std::endl;
+      MeshSelection<MeshType,MeshComponent::Cell> sel(this->mesh(),
+						      kv.second.get_child("cells"));
+      
+      if (key == "constant") {
+	ValueType value = kv.second.get<ValueType>("value");
+	MeshSelectionCheckFile<MeshSelection<MeshType,MeshComponent::Cell>> cf("hbdy_sel");
+	cf.output(sel);
+	this->set_values(value, value, sel);
+      } else if (key == "time series") {
+	const std::shared_ptr<TimeSeries<TimeType,ValueType>>& ts =
+	  TimeSeriesDatabase<TimeType,ValueType>::instance()
+	  .get_time_series_ptr(this->mesh()->queue_ptr(), tp_ptr->parser(),
+			       kv.second.get<std::string>("values"));
+	this->set_values(ts->at(time_now),
+			 ts->at(time_now + step_duration), sel);
+      }
+    }
+
+    FieldCheckFile<Field<ValueType,MeshType,MeshComponent::Cell>> cf("hbdy");
+    cf.output({ &(this->xbdy0()), &(this->xbdy1()) });
+  }
+  
+
 };
 
 #endif

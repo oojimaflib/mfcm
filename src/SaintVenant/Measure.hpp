@@ -19,6 +19,7 @@
 #ifndef mfcm_SaintVenant_Measure_hpp
 #define mfcm_SaintVenant_Measure_hpp
 
+#include "TimeSeries.hpp"
 #include "../Output/Measure.hpp"
 
 template<typename TT,

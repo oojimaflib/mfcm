@@ -76,15 +76,15 @@ protected:
   void set_values(const ValueType& v0, const ValueType& v1,
 		  const SelectionType& sel)
   {
-    CastFieldOperator<ValueType,ValueType,MeshType,MeshComponent::Cell>::apply(xbdy0_, v0, sel);
-    CastFieldOperator<ValueType,ValueType,MeshType,MeshComponent::Cell>::apply(xbdy1_, v1, sel);
+    CastFieldOperator<ValueType,ValueType,MeshType,MeshComponent::Cell>::apply(v0, xbdy0_, sel);
+    CastFieldOperator<ValueType,ValueType,MeshType,MeshComponent::Cell>::apply(v1, xbdy1_, sel);
   }
   
   void set_values(const FieldType& v0, const FieldType& v1,
 		  const SelectionType& sel)
   {
-    CastFieldOperator<ValueType,ValueType,MeshType,MeshComponent::Cell>::apply(xbdy0_, v0, sel);
-    CastFieldOperator<ValueType,ValueType,MeshType,MeshComponent::Cell>::apply(xbdy1_, v1, sel);
+    CastFieldOperator<ValueType,ValueType,MeshType,MeshComponent::Cell>::apply(v0, xbdy0_, sel);
+    CastFieldOperator<ValueType,ValueType,MeshType,MeshComponent::Cell>::apply(v1, xbdy1_, sel);
   }
   
 public:

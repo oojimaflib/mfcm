@@ -20,8 +20,6 @@
 #define mfcm_SaintVenant_Constants_hpp
 
 #include "Field.hpp"
-#include "FieldGenerator.hpp"
-#include "../Output/CheckFile.hpp"
 #include <memory>
 
 template<typename T,
@@ -45,18 +43,7 @@ private:
 public:
 
   SaintVenantConstants(const std::shared_ptr<MeshType>& mesh,
-		       bool on_device = true)
-    : mesh_(mesh),
-      z_bed_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
-	     (mesh_->queue_ptr(), "z_bed", mesh_, 0.0f, on_device)()),
-      dzdx_bed_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
-		(mesh_->queue_ptr(), "dzdx_bed", mesh_, 0.0f, on_device)()),
-      dzdy_bed_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
-		(mesh_->queue_ptr(), "dzdy_bed", mesh_, 0.0f, on_device)())
-  {
-    FieldCheckFile<FieldType> cf("constants");
-    cf.output({&z_bed_, &dzdx_bed_, &dzdy_bed_});
-  }
+		       bool on_device = true);
 
   const CellField<ValueType,MeshType>& z_bed(void) const { return z_bed_; }
   const CellField<ValueType,MeshType>& dzdx_bed(void) const { return dzdx_bed_; }
