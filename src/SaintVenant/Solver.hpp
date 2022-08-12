@@ -63,6 +63,8 @@ private:
   std::shared_ptr<SourceTerm> h_boundary_;
 
   std::vector<std::shared_ptr<MeasureType>> measures_;
+
+  CellField<ValueType, MeshType> stage_;
   
 public:
 
@@ -84,8 +86,11 @@ public:
     return mesh_->queue_ptr();
   }
 
-  void update_measures(const TimeType& time_now)
+  void end_of_step(const TimeType& time_now)
   {
+    // Update stage field
+    stage_ = constants_->z_bed() + U_.at(0)->h();
+    // Update measures
     for (auto&& measure : measures_) {
       measure->update(time_now, *(U_.at(0)));
     }
@@ -115,16 +120,42 @@ public:
     return U_.at(state_no)->max_control_number(timestep);
   }
 
+  template<typename OutputFieldType>
+  OutputFieldType* get_solver_output_field_ptr(const std::string& name)
+  {
+    return nullptr;
+  }
+
+  template<>
+  CellField<ValueType,MeshType>* get_solver_output_field_ptr(const std::string& name)
+  {
+    if (name == "stage") {
+      return &stage_;
+    }
+    return nullptr;
+  }
+  
   template<MeshComponent C>
   Field<ValueType,MeshType,C>* get_output_field_ptr(const std::string& name)
   {
     using OutputFieldType = Field<ValueType,MeshType,C>;
-    OutputFieldType* ptr = U_.at(0)->template get_output_field_ptr<OutputFieldType>(name);
+
+    OutputFieldType* ptr = nullptr;
+
+    ptr = this->template get_solver_output_field_ptr<OutputFieldType>(name);
     if (ptr) return ptr;
+    
+    ptr = U_.at(0)->template get_output_field_ptr<OutputFieldType>(name);
+    if (ptr) return ptr;
+
     for (auto&& source_term : source_terms_) {
       ptr = source_term->template get_output_field_ptr<C>(name);
       if (ptr) return ptr;
     }
+
+    ptr = fluxes_->template get_output_field_ptr<OutputFieldType>(name);
+    if (ptr) return ptr;
+
     return nullptr;
   }
   

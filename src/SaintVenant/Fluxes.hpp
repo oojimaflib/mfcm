@@ -19,6 +19,8 @@
 #ifndef mfcm_SaintVenant_Fluxes_hpp
 #define mfcm_SaintVenant_Fluxes_hpp
 
+#define MFCM_FLUX_BRANCH_OUTPUT 1
+
 #include "State.hpp"
 #include "Constants.hpp"
 
@@ -42,6 +44,10 @@ private:
   FieldType u_;
   FieldType v_;
   FieldType z_;
+
+#if MFCM_FLUX_BRANCH_OUTPUT
+  FieldType branch_;
+#endif
   
 public:
 
@@ -65,6 +71,31 @@ public:
 	      const SaintVenantState<ValueType,MeshType>& dUdx,
 	      const SaintVenantState<ValueType,MeshType>& dUdy);
 
+  template<typename OutputFieldType>
+  OutputFieldType* get_output_field_ptr(const std::string& name)
+  {
+    return nullptr;
+  }
+
+  template<>
+  FieldType* get_output_field_ptr<FieldType>(const std::string& name)
+  {
+    if (name == "flux-h") {
+      return &h_;
+    } else if (name == "flux-u") {
+      return &u_;
+    } else if (name == "flux-v") {
+      return &v_;
+    } else if (name == "flux-z") {
+      return &z_;
+#if MFCM_FLUX_BRANCH_OUTPUT
+    } else if (name == "flux-branch") {
+      return &branch_;
+#endif
+    }
+    return nullptr;
+  }
+  
 };
 
 #endif

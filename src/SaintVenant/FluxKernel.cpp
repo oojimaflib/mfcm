@@ -27,13 +27,20 @@ SaintVenantFluxKernel(sycl::handler& cgh,
 		      FaceField<ValueType,MeshType>& hflux,
 		      FaceField<ValueType,MeshType>& uflux,
 		      FaceField<ValueType,MeshType>& vflux,
-		      FaceField<ValueType,MeshType>& zflux)
+		      FaceField<ValueType,MeshType>& zflux
+#if MFCM_FLUX_BRANCH_OUTPUT
+			, FaceField<ValueType,MeshType>& branchflux
+#endif
+			)
   : h_(U.h(), cgh), u_(U.u(), cgh), v_(U.v(), cgh),
     zb_(K.z_bed(), cgh), dzbdx_(K.dzdx_bed(), cgh), dzbdy_(K.dzdy_bed(), cgh),
     dhdx_(dUdx.h(), cgh), dudx_(dUdx.u(), cgh), dvdx_(dUdx.v(), cgh),
     dhdy_(dUdy.h(), cgh), dudy_(dUdy.u(), cgh), dvdy_(dUdy.v(), cgh),
     hflux_(hflux, cgh), uflux_(uflux, cgh),
     vflux_(vflux, cgh), zflux_(zflux, cgh)
+#if MFCM_FLUX_BRANCH_OUTPUT
+  , branchflux_(branchflux, cgh)
+#endif
 {
 }
 
@@ -47,6 +54,9 @@ zero_flux(const size_t& fid) const
   uflux_.data()[fid] = ValueType(0.0);
   vflux_.data()[fid] = ValueType(0.0);
   zflux_.data()[fid] = ValueType(0.0);    
+#if MFCM_FLUX_BRANCH_OUTPUT
+branchflux_.data()[fid] = ValueType(0.0);
+#endif
 }
   
 template<typename T,
@@ -228,12 +238,14 @@ operator()(sycl::item<1> item) const
     // water in the lower cell
     hflux_.data()[fid] = ValueType(0.0);
     if (zb_p > zb_m) {
+      branch += 0.25;
       ValueType uf_m = ValueType(9.81) * h_m * xdir;
       ValueType vf_m = ValueType(9.81) * h_m * ydir;
       uflux_.data()[fid] = ValueType(0.5) * uf_m;
       vflux_.data()[fid] = ValueType(0.5) * vf_m;
       zflux_.data()[fid] = -h_m * ValueType(0.5) * ValueType(9.81);
     } else {
+      branch += 0.75;
       ValueType uf_p = ValueType(9.81) * h_p * xdir;
       ValueType vf_p = ValueType(9.81) * h_p * ydir;
       uflux_.data()[fid] = ValueType(-0.5) * uf_p;
@@ -275,6 +287,9 @@ operator()(sycl::item<1> item) const
       ValueType(0.5) * a * (v_p);
     zflux_.data()[fid] = h_m / dx;
   }
-    
+
+#if MFCM_FLUX_BRANCH_OUTPUT
+  branchflux_.data()[fid] = ValueType(branch);
+#endif
   // zflux_.data()[fid] = ValueType(branch);
 }

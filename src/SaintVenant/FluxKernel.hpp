@@ -62,6 +62,11 @@ private:
   WriteAccessor vflux_;
   WriteAccessor zflux_;
 
+#if MFCM_FLUX_BRANCH_OUTPUT
+  WriteAccessor branchflux_;
+#endif
+  
+  
 public:
 
   SaintVenantFluxKernel(sycl::handler& cgh,
@@ -70,7 +75,11 @@ public:
 			FaceField<ValueType,MeshType>& hflux,
 			FaceField<ValueType,MeshType>& uflux,
 			FaceField<ValueType,MeshType>& vflux,
-			FaceField<ValueType,MeshType>& zflux);
+			FaceField<ValueType,MeshType>& zflux
+#if MFCM_FLUX_BRANCH_OUTPUT
+			, FaceField<ValueType,MeshType>& branchflux
+#endif
+			);
 
   void zero_flux(const size_t& fid) const;
 

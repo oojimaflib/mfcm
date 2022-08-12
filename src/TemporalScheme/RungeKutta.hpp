@@ -433,11 +433,11 @@ public:
   }
 
   /**
-     Update any measures
+     Update any measures or output-only fields
   */
-  virtual void update_measures(const TimeType& time_now)
+  virtual void end_of_step(const TimeType& time_now)
   {
-    solver_->update_measures(time_now);
+    solver_->end_of_step(time_now);
   }
   
   /**

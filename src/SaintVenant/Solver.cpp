@@ -36,7 +36,8 @@ SaintVenantSolver(const std::shared_ptr<sycl::queue>& queue,
 		  const std::shared_ptr<TimeParameters<TT>>& tparams)
   : time_params_(tparams),
     mesh_(std::make_shared<MeshType>(queue, true)),
-    constants_(std::make_shared<Constants>(mesh_, true))
+    constants_(std::make_shared<Constants>(mesh_, true)),
+    stage_(mesh_->queue_ptr(), "stage", mesh_, 0.0f, true)
 {
   U_.push_back(std::make_shared<State>(mesh_));
   dUdt_.push_back(std::make_shared<State>(0.0, mesh_, "d", "⁄dt"));

@@ -183,11 +183,11 @@ protected:
   virtual void accept_timestep(void) = 0;
 
   /**
-     Update "measure" outputs (if any) for the current time
+     Update output-only fields and measures for the current time
 
      @param[in] time_now The (global) simulation time.
   */
-  virtual void update_measures(const TimeType& time_now) = 0;
+  virtual void end_of_step(const TimeType& time_now) = 0;
   
   /**
      Write user-requested outputs (if any) relating to the current
@@ -256,7 +256,7 @@ public:
       std::cout << "Starting step " << i
 		<< " at time " << time_now << std::endl;
 
-      this->update_measures(time_now);
+      this->end_of_step(time_now);
       
       // Write any outputs
       this->do_outputs(time_now);

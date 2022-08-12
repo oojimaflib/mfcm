@@ -35,6 +35,10 @@ SaintVenantFluxes(const std::shared_ptr<MeshType>& mesh,
        (mesh_->queue_ptr(), "v_flux", mesh_, 0.0f, on_device)),
     z_(Field<ValueType,MeshType,MeshComponent::Face>
        (mesh_->queue_ptr(), "z_flux", mesh_, 0.0f, on_device))
+#if MFCM_FLUX_BRANCH_OUTPUT
+  , branch_(Field<ValueType,MeshType,MeshComponent::Face>
+       (mesh_->queue_ptr(), "branch_flux", mesh_, 0.0f, on_device))
+#endif
 {}
 
 template<typename T,
@@ -51,7 +55,11 @@ update(const SaintVenantState<ValueType,MeshType>& U,
   size_t nfaces = mesh_->template object_count<MeshComponent::Face>();
   mesh_->queue_ptr()->submit([&] (sycl::handler& cgh) {
     auto kernel = FluxKernel(cgh, U, constants, dUdx, dUdy,
-			     h_, u_, v_, z_);
+			     h_, u_, v_, z_
+#if MFCM_FLUX_BRANCH_OUTPUT
+			     , branch_
+#endif
+			     );
     cgh.parallel_for(sycl::range<1>(nfaces), kernel);
   });
 }
