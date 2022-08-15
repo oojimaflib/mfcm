@@ -30,7 +30,7 @@ class FieldGenerator
 {
 private:
 
-  Field<T,Mesh,FieldMapping> field_;
+  std::shared_ptr<Field<T,Mesh,FieldMapping>> field_;
   
   void load_constant_input_field(Field<T,Mesh,FieldMapping>& input_field,
 				 const MeshSelection<Mesh,FieldMapping>& selection,
@@ -57,6 +57,11 @@ public:
 		 bool on_device = true);
 
   const Field<T,Mesh,FieldMapping>& operator()(void)
+  {
+    return *field_;
+  }
+  
+  const std::shared_ptr<Field<T,Mesh,FieldMapping>>& make_shared(void)
   {
     return field_;
   }

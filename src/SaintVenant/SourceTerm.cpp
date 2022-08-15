@@ -19,8 +19,9 @@
 #include "SourceTerm.hpp"
 
 #include "Boundaries/BoundarySourceTerm.cpp"
-#include "ManningRoughnessSourceTerm.cpp"
-#include "InfiltrationSourceTerm.cpp"
+#include "SourceTerms/ManningRoughnessSourceTerm.cpp"
+#include "SourceTerms/EnergyLossSourceTerm.cpp"
+#include "SourceTerms/InfiltrationSourceTerm.cpp"
 
 template<typename TT,
 	 typename T,
@@ -32,8 +33,10 @@ create_source_term(const Config& conf,
 		   bool on_device)
 {
   std::string st_type = conf.get_value<std::string>();
-  if (st_type == "manning-roughness") {
+  if (st_type == "manning roughness") {
     return ManningRoughnessSourceTerm<TT,T,Mesh>::create_source_term(conf, mesh, on_device);
+  } else if (st_type == "energy loss") {
+    return EnergyLossSourceTerm<TT,T,Mesh>::create_source_term(conf, mesh, on_device);
   } else if (st_type == "infiltration") {
     return InfiltrationSourceTerm<TT,T,Mesh>::create_source_term(conf, mesh, on_device);
   } else {

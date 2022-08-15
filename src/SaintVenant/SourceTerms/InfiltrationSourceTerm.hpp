@@ -92,8 +92,8 @@ private:
 
   std::shared_ptr<MeshType> mesh_;
 
-  FieldType infiltration_rate_;
-  FieldType infiltration_capacity_;
+  std::shared_ptr<FieldType> infiltration_rate_;
+  std::shared_ptr<FieldType> infiltration_capacity_;
 
 public:
 
@@ -104,14 +104,26 @@ public:
     : SaintVenantSourceTerm<TimeType,ValueType,MeshType>(),
       mesh_(mesh),
       infiltration_rate_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
-			 (mesh_->queue_ptr(), "IR", mesh_, i_rate_val, on_device)()),
+			 (mesh_->queue_ptr(), "IR", mesh_, i_rate_val, on_device).make_shared()),
       infiltration_capacity_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
-			     (mesh_->queue_ptr(), "IC", mesh_, i_cap_val, on_device)())
+			     (mesh_->queue_ptr(), "IC", mesh_, i_cap_val, on_device).make_shared())
   {
     FieldCheckFile<FieldType> cf("infiltration");
-    cf.output({&infiltration_rate_, &infiltration_capacity_});
+    cf.output({infiltration_rate_.get(), infiltration_capacity_.get()});
   }
 
+  InfiltrationSourceTerm(const std::shared_ptr<MeshType>& mesh,
+			 const std::shared_ptr<FieldType>& i_rate_field,
+			 const std::shared_ptr<FieldType>& i_cap_field)
+    : SaintVenantSourceTerm<TimeType,ValueType,MeshType>(),
+      mesh_(mesh),
+      infiltration_rate_(i_rate_field),
+      infiltration_capacity_(i_cap_field)
+  {
+    FieldCheckFile<FieldType> cf("infiltration");
+    cf.output({infiltration_rate_.get(), infiltration_capacity_.get()});
+  }    
+  
   virtual ~InfiltrationSourceTerm(void)
   {}
 
@@ -129,7 +141,7 @@ public:
     size_t ncells = mesh_->template object_count<MeshComponent::Cell>();
     mesh_->queue_ptr()->submit([&] (sycl::handler& cgh) {
       auto kernel = Kernel(cgh, U, constants,
-			   infiltration_rate_, infiltration_capacity_,
+			   *infiltration_rate_, *infiltration_capacity_,
 			   dUdt, timestep);
       cgh.parallel_for(sycl::range<1>(ncells), kernel);
     });

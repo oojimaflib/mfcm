@@ -124,10 +124,11 @@ FieldGenerator(const std::shared_ptr<sycl::queue>& queue,
 	       std::shared_ptr<Mesh>& mesh_p,
 	       const T& init_value,
 	       bool on_device)
-  : field_(queue, name, mesh_p, init_value, on_device)
+  : field_(std::make_shared<Field<T,Mesh,FieldMapping>>(queue, name, mesh_p,
+							init_value, on_device))
 {
   if (!on_device) {
-    field_.move_to_device();
+    field_->move_to_device();
   }
   const Config& conf = GlobalConfig::instance().field_configuration(name);
   std::cout << "Generating field '" << name << "'" << std::endl;
@@ -137,21 +138,21 @@ FieldGenerator(const std::shared_ptr<sycl::queue>& queue,
     const Config& value_spec = kv.second;
 
     if (key == "set") {
-      load_input_field(field_, value_spec);
+      load_input_field((*field_), value_spec);
     } else if (key == "add") {
       Field<T,Mesh,FieldMapping> input_field(queue, "input", mesh_p, 0.0);
       load_input_field(input_field, value_spec);
-      field_ += input_field;
+      (*field_) += input_field;
     } else if (key == "multiply") {
       Field<T,Mesh,FieldMapping> input_field(queue, "input", mesh_p, 1.0);
       load_input_field(input_field, value_spec);
-      field_ *= input_field;
+      (*field_) *= input_field;
     } else {
       std::cerr << "Unknown field operation '" << key << "'." << std::endl;
       throw std::runtime_error("Unknown field operation.");
     }
   }
   if (!on_device) {
-    field_.move_to_host();
+    field_->move_to_host();
   }
 }
