@@ -82,8 +82,8 @@ template<typename TT,
 	 typename T,
 	 typename Mesh>
 class StageBoundarySourceTerm
-  : public BoundarySourceTerm<TT, T, Mesh,
-			      StageBoundarySourceKernel<T,Mesh>>
+  : public KernelBoundarySourceTerm<TT, T, Mesh,
+				    StageBoundarySourceKernel<T,Mesh>>
 {
 public:
 
@@ -101,7 +101,7 @@ public:
 
   StageBoundarySourceTerm(const std::shared_ptr<MeshType>& mesh,
 			 bool on_device = true)
-    : BoundarySourceTerm<TimeType,ValueType,MeshType,KernelType>
+    : KernelBoundarySourceTerm<TimeType,ValueType,MeshType,KernelType>
     (mesh,
      FieldType(mesh->queue_ptr(), "hbdy0", mesh,
 	       std::numeric_limits<ValueType>::quiet_NaN(), on_device),
@@ -147,7 +147,11 @@ public:
     cf.output({ &(this->xbdy0()), &(this->xbdy1()) });
   }
   
-
+  static std::shared_ptr<SaintVenantSourceTerm<TT,T,Mesh>>
+  create_boundary(const Config& conf,
+		  const std::shared_ptr<MeshType>& mesh,
+		  bool on_device);
+ 
 };
 
 #endif

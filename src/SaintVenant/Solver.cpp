@@ -62,15 +62,21 @@ SaintVenantSolver(const std::shared_ptr<sycl::queue>& queue,
     source_terms_.push_back(SaintVenantSourceTerm<TT,T,Mesh>::create_source_term(st_conf, mesh_));
   }
 
+  for (auto&& b_conf : GlobalConfig::instance().boundary_configurations()) {
+    boundaries_.push_back(BoundarySourceTerm<TT,T,Mesh>::create_boundary(b_conf, mesh_));
+  }
+
+
+
       /*
   source_terms_.push_back(std::make_shared<ManningRoughnessSourceTerm<TT,T,Mesh>>(mesh_));
   source_terms_.push_back(std::make_shared<InfiltrationSourceTerm<TT,T,Mesh>>(mesh_));
       */
-  
+/*
   boundaries_.push_back(std::make_shared<DischargeBoundarySourceTerm<TT,T,Mesh>>(mesh_));
   boundaries_.push_back(std::make_shared<HeadBoundarySourceTerm<TT,T,Mesh>>(mesh_));
   boundaries_.push_back(std::make_shared<StageBoundarySourceTerm<TT,T,Mesh>>(mesh_));
-
+*/
   // Create the measures
   SaintVenantHPointMeasure<TT,T,Mesh>::create_measures(queue, time_params_, mesh_, measures_);
 }

@@ -81,8 +81,8 @@ template<typename TT,
 	 typename T,
 	 typename Mesh>
 class DischargeBoundarySourceTerm
-  : public BoundarySourceTerm<TT, T, Mesh,
-			      DischargeBoundarySourceKernel<T,Mesh>>
+  : public KernelBoundarySourceTerm<TT, T, Mesh,
+				    DischargeBoundarySourceKernel<T,Mesh>>
 {
 public:
 
@@ -101,7 +101,7 @@ public:
 
   DischargeBoundarySourceTerm(const std::shared_ptr<MeshType>& mesh,
 			      bool on_device = true)
-    : BoundarySourceTerm<TimeType,ValueType,MeshType,KernelType>
+    : KernelBoundarySourceTerm<TimeType,ValueType,MeshType,KernelType>
     (mesh,
      FieldType(mesh->queue_ptr(), "qbdy0", mesh, ValueType(0.0), on_device),
      FieldType(mesh->queue_ptr(), "qbdy1", mesh, ValueType(0.0), on_device))
@@ -144,6 +144,11 @@ public:
     FieldCheckFile<Field<ValueType,MeshType,MeshComponent::Cell>> cf("qbdy");
     cf.output({ &(this->xbdy0()), &(this->xbdy1()) });
   }
+
+  static std::shared_ptr<SaintVenantSourceTerm<TT,T,Mesh>>
+  create_boundary(const Config& conf,
+		  const std::shared_ptr<MeshType>& mesh,
+		  bool on_device);
   
 };
 

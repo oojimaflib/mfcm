@@ -23,8 +23,7 @@
 
 template<typename TT,
 	 typename T,
-	 typename Mesh,
-	 typename Kernel>
+	 typename Mesh>
 class BoundarySourceTerm : public SaintVenantSourceTerm<TT,T,Mesh>
 {
 public:
@@ -38,14 +37,12 @@ public:
   using State = SaintVenantState<ValueType,MeshType>;
   using Constants = SaintVenantConstants<ValueType,MeshType>;
 
-private:
+protected:
 
   std::shared_ptr<MeshType> mesh_;
 
   FieldType xbdy0_;
   FieldType xbdy1_;
-
-protected:
 
   const std::shared_ptr<MeshType>& mesh(void) const { return mesh_; }
 
@@ -90,8 +87,8 @@ protected:
 public:
 
   BoundarySourceTerm(const std::shared_ptr<MeshType>& mesh,
-		     const FieldType&& xbdy0,
-		     const FieldType&& xbdy1)
+		     const FieldType& xbdy0,
+		     const FieldType& xbdy1)
     : SaintVenantSourceTerm<TimeType,ValueType,MeshType>(),
       mesh_(mesh), xbdy0_(xbdy0), xbdy1_(xbdy1)
   {
@@ -100,20 +97,53 @@ public:
   virtual ~BoundarySourceTerm(void)
   {}
 
+  static std::shared_ptr<SaintVenantSourceTerm<TT,T,Mesh>>
+  create_boundary(const Config& conf,
+		  const std::shared_ptr<MeshType>& mesh,
+		  bool on_device = true);
+  
+};
+
+template<typename TT,
+	 typename T,
+	 typename Mesh,
+	 typename Kernel>
+class KernelBoundarySourceTerm : public BoundarySourceTerm<TT,T,Mesh>
+{
+public:
+
+
+  using TimeType = TT;
+  using ValueType = T;
+  using MeshType = Mesh;
+  using FieldType = CellField<ValueType,MeshType>;
+  using SelectionType = MeshSelection<MeshType,MeshComponent::Cell>;
+
+  using State = SaintVenantState<ValueType,MeshType>;
+  using Constants = SaintVenantConstants<ValueType,MeshType>;
+
+  KernelBoundarySourceTerm(const std::shared_ptr<MeshType>& mesh,
+			   const FieldType&& xbdy0,
+			   const FieldType&& xbdy1)
+    : BoundarySourceTerm<TimeType,ValueType,MeshType>(mesh, xbdy0, xbdy1)
+  {}
+
+  virtual ~KernelBoundarySourceTerm(void) {}
+
   virtual void apply(State& U, Constants& constants, State& dUdt,
 		     const TimeType& timestep, const TimeType& time_now,
 		     const std::shared_ptr<TimeParameters<TimeType>>& tp_ptr)
   {
-    size_t ncells = mesh_->template object_count<MeshComponent::Cell>();
-    mesh_->queue_ptr()->submit([&] (sycl::handler& cgh) {
+    size_t ncells = this->mesh_->template object_count<MeshComponent::Cell>();
+    this->mesh_->queue_ptr()->submit([&] (sycl::handler& cgh) {
       auto kernel = Kernel(cgh, U, constants,
-			   xbdy0_, xbdy1_,
+			   this->xbdy0_, this->xbdy1_,
 			   dUdt, timestep, time_now,
 			   tp_ptr->step_duration());
       cgh.parallel_for(sycl::range<1>(ncells), kernel);
     });
   }
-  
+
 };
 
 #endif

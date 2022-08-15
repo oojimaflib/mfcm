@@ -30,10 +30,6 @@
 
 #include "SourceTerm.cpp"
 
-#include "Boundaries/DischargeBoundarySourceTerm.cpp"
-#include "Boundaries/HeadBoundarySourceTerm.cpp"
-#include "Boundaries/StageBoundarySourceTerm.cpp"
-
 #include "Cartesian2DMesh.hpp"
 
 template class SaintVenantSolver<float,float,Cartesian2DMesh>;

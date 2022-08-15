@@ -67,3 +67,15 @@ operator()(sycl::item<1> item) const
   }
   
 }
+
+template<typename TT,
+	 typename T,
+	 typename Mesh>
+std::shared_ptr<SaintVenantSourceTerm<TT,T,Mesh>>
+DischargeBoundarySourceTerm<TT,T,Mesh>::
+create_boundary(const Config& conf,
+		const std::shared_ptr<MeshType>& mesh,
+		bool on_device)
+{
+  return std::make_shared<DischargeBoundarySourceTerm<TT,T,Mesh>>(mesh, on_device);
+}

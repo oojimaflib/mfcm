@@ -163,6 +163,9 @@ public:
 
   const std::vector<std::reference_wrapper<Config>>
   source_term_configurations(void);
+
+  const std::vector<std::reference_wrapper<Config>>
+  boundary_configurations(void);
 };
 
 #endif

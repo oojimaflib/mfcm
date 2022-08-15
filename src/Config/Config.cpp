@@ -230,14 +230,14 @@ field_configuration(const std::string& name)
 const Config& GlobalConfig::
 boundary_configuration(const std::string& name)
 {
-  auto ts_crange = config_.equal_range("boundaries");
+  auto ts_crange = config_.equal_range("boundary");
   for (auto it = ts_crange.first; it != ts_crange.second; ++it) {
     std::string ts_name = it->second.get_value<std::string>();
     if (name == ts_name) {
       return it->second;
     }
   }
-  return config_.add("boundaries", name);
+  return config_.add("boundary", name);
 }
 
 const Config& GlobalConfig::
@@ -352,6 +352,17 @@ GlobalConfig::source_term_configurations(void)
 {
   std::vector<std::reference_wrapper<Config>> vec;
   auto ts_crange = config_.equal_range("source term");
+  for (auto it = ts_crange.first; it != ts_crange.second; ++it) {
+    vec.push_back(it->second);
+  }
+  return vec;
+}
+
+const std::vector<std::reference_wrapper<Config>>
+GlobalConfig::boundary_configurations(void)
+{
+  std::vector<std::reference_wrapper<Config>> vec;
+  auto ts_crange = config_.equal_range("boundary");
   for (auto it = ts_crange.first; it != ts_crange.second; ++it) {
     vec.push_back(it->second);
   }

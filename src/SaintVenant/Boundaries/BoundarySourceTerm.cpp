@@ -1,5 +1,5 @@
 /***********************************************************************
- * mfcm SaintVenant/SourceTerm.cpp
+ * mfcm SaintVenant/Boundaries/BoundarySourceTerm.cpp
  *
  * Copyright (C) Edenvale Young Associates 2022
  * 
@@ -16,29 +16,32 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  ***********************************************************************/
 
-#include "SourceTerm.hpp"
+#include "BoundarySourceTerm.hpp"
 
-#include "Boundaries/BoundarySourceTerm.cpp"
-#include "ManningRoughnessSourceTerm.cpp"
-#include "InfiltrationSourceTerm.cpp"
+#include "DischargeBoundarySourceTerm.cpp"
+#include "HeadBoundarySourceTerm.cpp"
+#include "StageBoundarySourceTerm.cpp"
 
 template<typename TT,
 	 typename T,
 	 typename Mesh>
 std::shared_ptr<SaintVenantSourceTerm<TT,T,Mesh>>
-SaintVenantSourceTerm<TT,T,Mesh>::
-create_source_term(const Config& conf,
-		   const std::shared_ptr<MeshType>& mesh,
-		   bool on_device)
+BoundarySourceTerm<TT,T,Mesh>::
+create_boundary(const Config& conf,
+		const std::shared_ptr<MeshType>& mesh,
+		bool on_device)
 {
-  std::string st_type = conf.get_value<std::string>();
-  if (st_type == "manning-roughness") {
-    return ManningRoughnessSourceTerm<TT,T,Mesh>::create_source_term(conf, mesh, on_device);
-  } else if (st_type == "infiltration") {
-    return InfiltrationSourceTerm<TT,T,Mesh>::create_source_term(conf, mesh, on_device);
+  std::string btype = conf.get_value<std::string>();
+  if (btype == "discharge") {
+    return DischargeBoundarySourceTerm<TT,T,Mesh>::create_boundary(conf, mesh, on_device);
+  } else if (btype == "head") {
+    return HeadBoundarySourceTerm<TT,T,Mesh>::create_boundary(conf, mesh, on_device);
+  } else if (btype == "stage") {
+    return StageBoundarySourceTerm<TT,T,Mesh>::create_boundary(conf, mesh, on_device);
   } else {
-    std::cerr << "ERROR: Unknown source term type: " << std::quoted(st_type)
+    std::cerr << "ERROR: Unknown boundary type: " << std::quoted(btype)
 	      << std::endl;
-    throw std::runtime_error("Unknown source term type.");
+    throw std::runtime_error("Unknown boundary type.");
   }
 }
+
