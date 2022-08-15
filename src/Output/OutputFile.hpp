@@ -163,8 +163,8 @@ public:
 
 };
 
-template<typename Solver>
-class FieldOutputFile : public TimedOutputFile<typename Solver::TimeType>
+template<typename Solver, MeshComponent C>
+class MultiFieldOutputFile : public TimedOutputFile<typename Solver::TimeType>
 {
 public:
 
@@ -174,34 +174,23 @@ public:
   using MeshType = typename Solver::MeshType;
 
 private:
-  
+
   std::shared_ptr<SolverType> solver_;
-  
-  template<MeshComponent C>
-  bool output_field_if_present(const std::string& name,
-			       const stdfs::path& filename) const
-  {
-    using FieldType = Field<ValueType,MeshType,C>;
-    FieldType* fptr = solver_->template get_output_field_ptr<C>(name);
-    if (fptr) {
-      auto output_func = std::make_shared<FieldOutputFunction<FieldType>>(fptr);
-      this->output_no_ += 1;
-      this->output(output_func, filename);
-      return true;
-    }
-    return false;
-  }
-  
+
+  std::vector<std::string> output_field_names_;
+
 public:
 
-  FieldOutputFile(const std::string& name,
-		  const std::shared_ptr<TimeParameters<TimeType>> tparams,
-		  std::shared_ptr<SolverType>& solver)
+  MultiFieldOutputFile(const std::string& name,
+		       const std::shared_ptr<TimeParameters<TimeType>> tparams,
+		       std::shared_ptr<SolverType>& solver,
+		       const std::vector<std::string>& field_names)
     : TimedOutputFile<TimeType>(name, tparams),
-      solver_(solver)
-  {}
+      solver_(solver), output_field_names_(field_names)
+  {
+  }
 
-  virtual ~FieldOutputFile(void)
+  virtual ~MultiFieldOutputFile(void)
   {}
 
   virtual void timed_output(const TimeType& time_now) const
@@ -218,62 +207,51 @@ public:
 		  << std::quoted(fn.parent_path().native()) << std::endl;
       }
 
-      std::string output_field_name = this->name_;
-      if (this->output_field_if_present<MeshComponent::Cell>(output_field_name, fn)) return;
-      if (this->output_field_if_present<MeshComponent::Face>(output_field_name, fn)) return;
-      if (this->output_field_if_present<MeshComponent::Vertex>(output_field_name, fn)) return;
-      std::cerr << "Could not find field named "
-		<< std::quoted(output_field_name) << " in output." << std::endl;
-      throw std::runtime_error("Could not output field.");
-    }
-  }
-  
-};
-
-/*
-template<typename TT,
-	 typename Field>
-class FieldOutputFile : public TimedOutputFile<TT, Field>
-{
-public:
-
-  using TimeType = TT;
-  using FieldType = Field;
-  using FieldOutputFunctionType = FieldOutputFunction<Field>;
-
-  FieldOutputFile(const std::string& name,
-		  const std::shared_ptr<TimeParameters<TimeType>> tparams)
-    : TimedOutputFile<TT,Field>(name, tparams)
-  {}
-  
-  virtual ~FieldOutputFile(void) {}
-
-  virtual std::vector<std::string> output_field_names(void) const
-  {
-    return { "h", "u", "v" };
-  }
-
-  virtual void timed_output(const std::vector<FieldType*> field_ptrs,
-			    const TimeType& time_now) const
-  {
-    if (this->enabled() and
-	time_now >= this->start_time_ + this->output_every_ * this->output_no_) {
-      stdfs::path fn = this->output_filename_.native() + "_" +
-	std::to_string(time_now) + ".csv";
-      std::cout << "Writing output file " << std::quoted(this->name())
-		<< " to " << std::quoted(fn.native()) << std::endl;
-      if (stdfs::create_directories(fn.parent_path())) {
-	std::cout << "Created output directory "
-		  << std::quoted(fn.parent_path().native()) << std::endl;
+      using FieldType = Field<ValueType,MeshType,C>;
+      
+      std::vector<FieldType*> output_field_ptrs;
+      for (auto&& name : output_field_names_) {
+	FieldType* ptr = solver_->template get_output_field_ptr<C>(name);
+	if (ptr) {
+	  output_field_ptrs.push_back(ptr);
+	}
       }
 
-      auto output_func = std::make_shared<FieldOutputFunctionType>(field_ptrs);
+      auto output_func = std::make_shared<FieldOutputFunction<FieldType>>(output_field_ptrs);
       this->output_no_ += 1;
       this->output(output_func, fn);
     }
   }
-
 };
-*/
+
+template<typename Solver>
+std::shared_ptr<TimedOutputFile<typename Solver::TimeType>>
+make_field_output_file(const std::string& name,
+		       const std::shared_ptr<TimeParameters<typename Solver::TimeType>> tparams,
+		       std::shared_ptr<Solver>& solver)
+{
+  std::vector<std::string> output_field_names;
+  const Config& conf = GlobalConfig::instance().output_file_configuration(name);
+
+  if (conf.count("field") > 0) {
+    auto frange = conf.equal_range("field");
+    for (auto it = frange.first; it != frange.second; ++it) {
+      output_field_names.push_back(it->second.get_value<std::string>());
+    }
+  } else {
+    output_field_names.push_back(name);
+  }
+
+  std::string mc_str = conf.get<std::string>("at", "cells");
+  if (mc_str == "cells") {
+    return std::make_shared<MultiFieldOutputFile<Solver,MeshComponent::Cell>>(name, tparams, solver, output_field_names);
+  } else if (mc_str == "faces") {
+    return std::make_shared<MultiFieldOutputFile<Solver,MeshComponent::Face>>(name, tparams, solver, output_field_names);
+  } else if (mc_str == "vertices") {
+    return std::make_shared<MultiFieldOutputFile<Solver,MeshComponent::Vertex>>(name, tparams, solver, output_field_names);
+  } else {
+    throw std::runtime_error("Invalid value for output.at");
+  }
+}
 
 #endif

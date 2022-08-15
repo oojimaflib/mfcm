@@ -29,6 +29,7 @@
 #include "TemporalDerivativeKernel.cpp"
 
 #include "ManningRoughnessSourceTerm.cpp"
+#include "InfiltrationSourceTerm.cpp"
 
 #include "Boundaries/DischargeBoundarySourceTerm.cpp"
 #include "Boundaries/HeadBoundarySourceTerm.cpp"

@@ -272,13 +272,13 @@ public:
 
   using TimeType = typename Solver::TimeType;
   using SolverType = Solver;
-  using OutputFileType = FieldOutputFile<SolverType>;
+  using OutputFileType = TimedOutputFile<TimeType>;
   
 protected:
   
   std::shared_ptr<SolverType> solver_;
 
-  std::vector<OutputFileType> outputs_;
+  std::vector<std::shared_ptr<OutputFileType>> outputs_;
   
   bool step_debugging_;
 
@@ -302,9 +302,8 @@ public:
 					   tparams)),
       step_debugging_(step_debugging)
   {
-    // outputs_.push_back(OutputFileType("state", tparams, solver_));
     for (auto&& name : GlobalConfig::instance().output_files_list()) {
-      outputs_.push_back(OutputFileType(name, tparams, solver_));
+      outputs_.push_back(make_field_output_file<SolverType>(name, tparams, solver_));
     }
   }
 
@@ -327,9 +326,8 @@ public:
       step_debugging_(step_debugging)
   {
     for (auto&& name : GlobalConfig::instance().output_files_list()) {
-      outputs_.push_back(OutputFileType(name, tparams, solver_));
+      outputs_.push_back(make_field_output_file<SolverType>(name, tparams, solver_));
     }
-    // outputs_.push_back(OutputFileType("state", tparams, solver_));
   }
 
 protected:
@@ -446,7 +444,7 @@ public:
   virtual void do_outputs(const TimeType& time_now)
   {
     for (auto&& output : outputs_) {
-      output.timed_output(time_now);
+      output->timed_output(time_now);
     }
   }
 

@@ -19,6 +19,7 @@
 #include "Solver.hpp"
 
 #include "ManningRoughnessSourceTerm.hpp"
+#include "InfiltrationSourceTerm.hpp"
 
 #include "Boundaries/DischargeBoundarySourceTerm.hpp"
 #include "Boundaries/HeadBoundarySourceTerm.hpp"
@@ -58,6 +59,8 @@ SaintVenantSolver(const std::shared_ptr<sycl::queue>& queue,
   fluxes_ = std::make_shared<Fluxes>(mesh_, "", "flux");
 
   source_terms_.push_back(std::make_shared<ManningRoughnessSourceTerm<TT,T,Mesh>>(mesh_));
+  source_terms_.push_back(std::make_shared<InfiltrationSourceTerm<TT,T,Mesh>>(mesh_));
+  
   boundaries_.push_back(std::make_shared<DischargeBoundarySourceTerm<TT,T,Mesh>>(mesh_));
   boundaries_.push_back(std::make_shared<HeadBoundarySourceTerm<TT,T,Mesh>>(mesh_));
   boundaries_.push_back(std::make_shared<StageBoundarySourceTerm<TT,T,Mesh>>(mesh_));
