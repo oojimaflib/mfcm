@@ -86,3 +86,25 @@ operator()(sycl::item<1> item) const
     Sf_.data()[cell_c] = 0.0;
   }
 }
+
+template<typename TT,
+	 typename T,
+	 typename Mesh>
+std::shared_ptr<SaintVenantSourceTerm<TT,T,Mesh>>
+ManningRoughnessSourceTerm<TT,T,Mesh>::
+create_source_term(const Config& conf,
+		   const std::shared_ptr<MeshType>& mesh,
+		   bool on_device)
+{
+  ValueType n_shallow_val = conf.get<ValueType>("default shallow n", 0.03);
+  ValueType n_deep_val = conf.get<ValueType>("default deep n", 0.3);
+  ValueType d_shallow_val = conf.get<ValueType>("default shallow depth", 0.1);
+  ValueType d_deep_val = conf.get<ValueType>("default deep depth", 0.3);
+  return std::make_shared<ManningRoughnessSourceTerm<TT,T,Mesh>>(mesh,
+								 n_shallow_val,
+								 n_deep_val,
+								 d_shallow_val,
+								 d_deep_val,
+								 on_device);
+}
+

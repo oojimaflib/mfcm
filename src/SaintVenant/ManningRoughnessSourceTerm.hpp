@@ -119,17 +119,25 @@ private:
 public:
   
   ManningRoughnessSourceTerm(const std::shared_ptr<MeshType>& mesh,
+			     const ValueType& n_shallow_val = 0.3,
+			     const ValueType& n_deep_val = 0.03,
+			     const ValueType& d_shallow_val = 0.1,
+			     const ValueType& d_deep_val = 0.3,
 			     bool on_device = true)
     : SaintVenantSourceTerm<TimeType,ValueType,MeshType>(),
       mesh_(mesh),
       n_shallow_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
-		 (mesh_->queue_ptr(), "n_shallow", mesh_, 0.3f, on_device)()),
+		 (mesh_->queue_ptr(), "n_shallow", mesh_,
+		  n_shallow_val, on_device)()),
       n_deep_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
-	      (mesh_->queue_ptr(), "n_deep", mesh_, 0.03f, on_device)()),
+	      (mesh_->queue_ptr(), "n_deep", mesh_,
+	       n_deep_val, on_device)()),
       d_shallow_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
-		 (mesh_->queue_ptr(), "d_shallow", mesh_, 0.1f, on_device)()),
+		 (mesh_->queue_ptr(), "d_shallow", mesh_,
+		  d_shallow_val, on_device)()),
       d_deep_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
-	      (mesh_->queue_ptr(), "d_deep", mesh_, 0.3f, on_device)()),
+	      (mesh_->queue_ptr(), "d_deep", mesh_,
+	       d_deep_val, on_device)()),
       nh_(mesh_->queue_ptr(), "mannings_n", mesh_, 0.0f, on_device),
       Sf_(mesh_->queue_ptr(), "friction_slope", mesh_, 0.0f, on_device)
   {
@@ -165,6 +173,11 @@ public:
     });
   }
 
+  static std::shared_ptr<SaintVenantSourceTerm<TT,T,Mesh>>
+  create_source_term(const Config& conf,
+		     const std::shared_ptr<MeshType>& mesh,
+		     bool on_device = true);
+  
 };
 
 #endif

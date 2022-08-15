@@ -50,16 +50,22 @@ SaintVenantSolver(const std::shared_ptr<sycl::queue>& queue,
   }
 
   /*
-  CheckFile<Field<ValueType,MeshType,MeshComponent::Cell>> cf("state");
-  cf.output({ &(U_[0]->h()), &(U_[0]->u()), &(U_[0]->v()) });
+    CheckFile<Field<ValueType,MeshType,MeshComponent::Cell>> cf("state");
+    cf.output({ &(U_[0]->h()), &(U_[0]->u()), &(U_[0]->v()) });
   */
   
   dUdx_ = std::make_shared<State>(0.0, mesh_, "d", "⁄dx");
   dUdy_ = std::make_shared<State>(0.0, mesh_, "d", "⁄dy");
   fluxes_ = std::make_shared<Fluxes>(mesh_, "", "flux");
 
+  for (auto&& st_conf : GlobalConfig::instance().source_term_configurations()) {
+    source_terms_.push_back(SaintVenantSourceTerm<TT,T,Mesh>::create_source_term(st_conf, mesh_));
+  }
+
+      /*
   source_terms_.push_back(std::make_shared<ManningRoughnessSourceTerm<TT,T,Mesh>>(mesh_));
   source_terms_.push_back(std::make_shared<InfiltrationSourceTerm<TT,T,Mesh>>(mesh_));
+      */
   
   boundaries_.push_back(std::make_shared<DischargeBoundarySourceTerm<TT,T,Mesh>>(mesh_));
   boundaries_.push_back(std::make_shared<HeadBoundarySourceTerm<TT,T,Mesh>>(mesh_));

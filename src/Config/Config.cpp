@@ -346,3 +346,14 @@ measure_configuration(void)
   // return conf;
   
 }
+
+const std::vector<std::reference_wrapper<Config>>
+GlobalConfig::source_term_configurations(void)
+{
+  std::vector<std::reference_wrapper<Config>> vec;
+  auto ts_crange = config_.equal_range("source term");
+  for (auto it = ts_crange.first; it != ts_crange.second; ++it) {
+    vec.push_back(it->second);
+  }
+  return vec;
+}

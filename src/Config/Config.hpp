@@ -160,6 +160,9 @@ public:
      Get the configuration for a measure
   */
   const Config& measure_configuration(void);
+
+  const std::vector<std::reference_wrapper<Config>>
+  source_term_configurations(void);
 };
 
 #endif

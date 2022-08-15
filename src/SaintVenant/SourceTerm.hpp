@@ -93,6 +93,11 @@ public:
   {
     return this->get_output_vertex_field_ptr(name);
   }
+
+  static std::shared_ptr<SaintVenantSourceTerm<TT,T,Mesh>>
+  create_source_term(const Config& conf,
+		     const std::shared_ptr<MeshType>& mesh,
+		     bool on_device = true);
   
 };
 

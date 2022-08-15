@@ -62,3 +62,20 @@ operator()(sycl::item<1> item) const
   dhdt_.data()[cell_c] -= dh / timestep_;
   i_cap_.data()[cell_c] -= dh;
 }
+
+template<typename TT,
+	 typename T,
+	 typename Mesh>
+std::shared_ptr<SaintVenantSourceTerm<TT,T,Mesh>>
+InfiltrationSourceTerm<TT,T,Mesh>::
+create_source_term(const Config& conf,
+		   const std::shared_ptr<MeshType>& mesh,
+		   bool on_device)
+{
+  ValueType i_rate_val = conf.get<ValueType>("default infiltration rate", 1e-6);
+  ValueType i_cap_val = conf.get<ValueType>("default infiltration capacity", 0.1);
+  return std::make_shared<InfiltrationSourceTerm<TT,T,Mesh>>(mesh,
+							     i_rate_val,
+							     i_cap_val,
+							     on_device);
+}

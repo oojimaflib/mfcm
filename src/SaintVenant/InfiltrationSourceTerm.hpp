@@ -98,13 +98,15 @@ private:
 public:
 
   InfiltrationSourceTerm(const std::shared_ptr<MeshType>& mesh,
+			 const ValueType& i_rate_val = 1e-6,
+			 const ValueType& i_cap_val = 0.1,
 			 bool on_device = true)
     : SaintVenantSourceTerm<TimeType,ValueType,MeshType>(),
       mesh_(mesh),
       infiltration_rate_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
-			 (mesh_->queue_ptr(), "IR", mesh_, 1e-6, on_device)()),
+			 (mesh_->queue_ptr(), "IR", mesh_, i_rate_val, on_device)()),
       infiltration_capacity_(FieldGenerator<ValueType,MeshType,MeshComponent::Cell>
-			     (mesh_->queue_ptr(), "IC", mesh_, 0.1, on_device)())
+			     (mesh_->queue_ptr(), "IC", mesh_, i_cap_val, on_device)())
   {
     FieldCheckFile<FieldType> cf("infiltration");
     cf.output({&infiltration_rate_, &infiltration_capacity_});
@@ -132,6 +134,11 @@ public:
       cgh.parallel_for(sycl::range<1>(ncells), kernel);
     });
   }
+
+  static std::shared_ptr<SaintVenantSourceTerm<TT,T,Mesh>>
+  create_source_term(const Config& conf,
+		     const std::shared_ptr<MeshType>& mesh,
+		     bool on_device = true);
   
 };
 
