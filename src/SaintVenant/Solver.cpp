@@ -98,6 +98,7 @@ SaintVenantSolver<TT,T,Mesh>::update_dUdt(const size_t& state_no,
   for (auto&& st : source_terms_) {
     st->apply(*(U_.at(state_no)),
 	      *(constants_),
+		*(dUdx_), *(dUdy_),
 	      *(dUdt_.at(state_no)),
 	      timestep, time_now, time_params_);
   }
@@ -106,6 +107,7 @@ SaintVenantSolver<TT,T,Mesh>::update_dUdt(const size_t& state_no,
   for (auto&& bdy : boundaries_) {
     bdy->apply(*(U_.at(state_no)),
 	       *(constants_),
+		*(dUdx_), *(dUdy_),
 	       *(dUdt_.at(state_no)),
 	       timestep, time_now, time_params_);
   }

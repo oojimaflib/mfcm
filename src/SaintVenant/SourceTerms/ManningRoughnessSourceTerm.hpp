@@ -158,7 +158,8 @@ public:
     return nullptr;
   }
   
-  virtual void apply(State& U, Constants& constants, State& dUdt,
+  virtual void apply(State& U, Constants& constants,
+		     State& dUdx, State& dUdy, State& dUdt,
 		     const TimeType& timestep, const TimeType& time_now,
 		     const std::shared_ptr<TimeParameters<TimeType>>& tp_ptr)
   {

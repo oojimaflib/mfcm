@@ -21,6 +21,24 @@
 template<typename TT,
 	 typename T,
 	 typename Mesh>
+std::shared_ptr<EnergyLossModel<TT,T,Mesh>>
+EnergyLossModel<TT,T,Mesh>::create(const std::shared_ptr<MeshType>& mesh,
+				   const Config& conf)
+{
+  std::string model_type = conf.get_value<std::string>();
+  if (model_type == "constant") {
+    return std::make_shared<ConstantEnergyLossModel<TT,T,Mesh>>(mesh, conf);
+  } else {
+    std::cerr << "ERROR: unknown energy loss model type: "
+	      << std::quoted(model_type) << std::endl;
+    throw std::runtime_error("Unknown energy loss model type.");
+  }
+}
+
+
+template<typename TT,
+	 typename T,
+	 typename Mesh>
 EnergyLossSourceKernel<TT,T,Mesh>::
 EnergyLossSourceKernel(sycl::handler& cgh,
 		       const State& U,
@@ -78,10 +96,14 @@ create_source_term(const Config& conf,
 		   const std::shared_ptr<MeshType>& mesh,
 		   bool on_device)
 {
-  ValueType fdx = conf.get<ValueType>("default fx/m", 0.0);
-  ValueType fdy = conf.get<ValueType>("default fy/m", 0.0);
-  return std::make_shared<EnergyLossSourceTerm<TT,T,Mesh>>(mesh,
-							   fdx, fdy,
-							   on_device);
+  if (conf.count("model") > 0) {
+    return std::make_shared<EnergyLossSourceTerm<TT,T,Mesh>>(mesh, conf, on_device);
+  } else {
+    ValueType fdx = conf.get<ValueType>("default fx/m", 0.0);
+    ValueType fdy = conf.get<ValueType>("default fy/m", 0.0);
+    return std::make_shared<EnergyLossSourceTerm<TT,T,Mesh>>(mesh,
+							     fdx, fdy,
+							     on_device);
+  }
 }
 
