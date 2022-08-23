@@ -9,7 +9,7 @@ target_include_directories(Geometry
 			   "${CMAKE_CURRENT_SOURCE_DIR}"
 			   "${CMAKE_CURRENT_BINARY_DIR}"
 			   )
-target_link_libraries(Geometry PUBLIC Config)
+target_link_libraries(Geometry PUBLIC Config DataArray)
 add_sycl_to_target(TARGET Geometry)
 
 			   

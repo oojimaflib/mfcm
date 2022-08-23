@@ -21,6 +21,7 @@
 
 #include "Mesh.hpp"
 #include "DataArray.hpp"
+#include "../Geometry/Geometry.hpp"
 
 class Cartesian2DMeshAccessor;
 
@@ -351,6 +352,21 @@ public:
     }
   }
 
+  template<>
+  size_t get_nearest_object_index<MeshComponent::Face>(const std::array<double,2>& loc) const
+  {
+    // TODO
+    return nxcells() * nycells();
+  }
+
+  template<>
+  size_t get_nearest_object_index<MeshComponent::Vertex>(const std::array<double,2>& loc) const
+  {
+    // TODO
+    return nxcells() * nycells();
+  }
+
+
   struct get_adjacent_cells_result
   {
     size_t lhs_id;
@@ -501,7 +517,7 @@ public:
       return { i, 0.0 };
     }
   }
-  
+
 };
 
 #endif

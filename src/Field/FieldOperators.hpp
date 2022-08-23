@@ -104,11 +104,14 @@ public:
       DestFieldType::FieldMappingType;
     // Get the location of the item
     size_t i = d_sel_ro_(item.get_linear_id());
-    std::array<double,2> location =
-      d_wo_.mesh().template get_object_location<DestFieldMappingType>(i);
-    size_t j = s_ro_.mesh().template get_nearest_object_index<SourceFieldMappingType>(location);
-    if (j < s_ro_.mesh().template object_count<SourceFieldMappingType>()) {
-      d_wo_.data()[item] = MFO()(s_ro_.data()[j]);
+    size_t n_obj = s_ro_.mesh().template object_count<SourceFieldMappingType>();
+    if (i < n_obj) {
+      std::array<double,2> location =
+	d_wo_.mesh().template get_object_location<DestFieldMappingType>(i);
+      size_t j = s_ro_.mesh().template get_nearest_object_index<SourceFieldMappingType>(location);
+      if (j < n_obj) {
+	d_wo_.data()[item] = MFO()(s_ro_.data()[j]);
+      }
     }
   }
   
@@ -189,8 +192,12 @@ public:
 
   void operator()(sycl::item<1> item) const
   {
+    constexpr MeshComponent SourceFieldMappingType =
+      SourceFieldType::FieldMappingType;
     size_t i = d_sel_ro_(item.get_linear_id());
-    d_wo_.data()[i] = CFO()(s_ro_.data()[i]);
+    if (i < s_ro_.mesh().template object_count<SourceFieldMappingType>()) {
+      d_wo_.data()[i] = CFO()(s_ro_.data()[i]);
+    }
   }
   
 };
@@ -233,8 +240,12 @@ public:
 
   void operator()(sycl::item<1> item) const
   {
+    constexpr MeshComponent FieldMappingType =
+      DestFieldType::FieldMappingType;
     size_t i = d_sel_ro_(item.get_linear_id());
-    d_wo_.data()[i] = CFO()(s_value_);
+    if (i < d_wo_.mesh().template object_count<FieldMappingType>()) {
+      d_wo_.data()[i] = CFO()(s_value_);
+    }
   }
   
 };
@@ -306,8 +317,12 @@ public:
 
   void operator()(sycl::item<1> item) const
   {
+    constexpr MeshComponent SourceFieldMappingType =
+      FieldType::FieldMappingType;
     size_t i = d_sel_ro_(item.get_linear_id());
-    d_wo_.data()[i] = UFO()(s_ro_.data()[i]);
+    if (i < s_ro_.mesh().template object_count<SourceFieldMappingType>()) {
+      d_wo_.data()[i] = UFO()(s_ro_.data()[i]);
+    }
   }
   
 };
@@ -378,8 +393,12 @@ public:
 
   void operator()(sycl::item<1> item) const
   {
+    constexpr MeshComponent SourceFieldMappingType =
+      FieldType::FieldMappingType;
     size_t i = sel_(item.get_linear_id());
-    lhs_.data()[i] = BCAO()(lhs_.data()[i], rhs_.data()[i]);
+    if (i < lhs_.mesh().template object_count<SourceFieldMappingType>()) {
+      lhs_.data()[i] = BCAO()(lhs_.data()[i], rhs_.data()[i]);
+    }
   }
 };
 
@@ -416,8 +435,12 @@ public:
 
   void operator()(sycl::item<1> item) const
   {
+    constexpr MeshComponent SourceFieldMappingType =
+      FieldType::FieldMappingType;
     size_t i = sel_(item.get_linear_id());
-    lhs_.data()[i] = BCAO()(lhs_.data()[i], rhs_);
+    if (i < lhs_.mesh().template object_count<SourceFieldMappingType>()) {
+      lhs_.data()[i] = BCAO()(lhs_.data()[i], rhs_);
+    }
   }
 };
 
@@ -493,8 +516,12 @@ public:
 
   void operator()(sycl::item<1> item) const
   {
+    constexpr MeshComponent SourceFieldMappingType =
+      FieldType::FieldMappingType;
     size_t i = d_sel_ro_(item.get_linear_id());
-    d_wo_.data()[i] = BFO()(lhs_ro_.data()[i], rhs_ro_.data()[i]);
+    if (i < lhs_ro_.mesh().template object_count<SourceFieldMappingType>()) {
+      d_wo_.data()[i] = BFO()(lhs_ro_.data()[i], rhs_ro_.data()[i]);
+    }
   }
   
 };

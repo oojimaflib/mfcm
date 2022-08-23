@@ -22,6 +22,7 @@
 #include "Mesh.hpp"
 #include "DataArray.hpp"
 #include "Config.hpp"
+#include "Geometry.hpp"
 
 template<typename Mesh, MeshComponent FieldMapping>
 class MeshSelectionAccessor;
@@ -38,6 +39,14 @@ public:
   
 private:
 
+  void initialize_global_(void);
+  
+  void initialize_mask_(void);
+  void update_mask_from_point_(const std::shared_ptr<Point>& pt);
+  void update_mask_from_geometry_(const std::shared_ptr<Geometry>& geom_ptr);
+  
+  void finalize_id_list_(void);
+  
   std::shared_ptr<MeshType> mesh_p_;
 
   DataArray<size_t> list_;
@@ -111,6 +120,14 @@ public:
     if (list_ro_.size() == 2 and list_ro_[0] == list_ro_[1]) {
       // Global selection
       return id;
+    } else if (list_ro_.size() > 2 and
+	       list_ro_[list_ro_.size() - 1] == list_ro_[list_ro_.size() - 2]) {
+      // The list is actually a mask
+      if (list_ro_[id] > 0) {
+	return id;
+      } else {
+	return list_ro_[list_ro_.size() - 1];
+      }
     } else {
       // List selection
       return list_ro_[id];

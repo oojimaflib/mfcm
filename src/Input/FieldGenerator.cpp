@@ -26,6 +26,25 @@ template<typename T,
 	 MeshComponent FieldMapping>
 void
 FieldGenerator<T,Mesh,FieldMapping>::
+load_composite_input_field(Field<T,Mesh,FieldMapping>& input_field,
+			   const MeshSelection<Mesh,FieldMapping>& selection,
+			   const Config& conf)
+{
+  if (selection.is_global()) {
+    auto md_crange = conf.equal_range("model");
+    for (auto it = md_crange.first; it != md_crange.second; ++it) {
+      FieldGeneratorModel<T,Mesh,FieldMapping>::create(input_field.mesh(), it->second)->apply(input_field);
+    }
+  } else {
+    throw std::runtime_error("Composite input field only supported with global selection.");
+  }
+}
+
+template<typename T,
+	 typename Mesh,
+	 MeshComponent FieldMapping>
+void
+FieldGenerator<T,Mesh,FieldMapping>::
 load_constant_input_field(Field<T,Mesh,FieldMapping>& input_field,
 			  const MeshSelection<Mesh,FieldMapping>& selection,
 			  const T& value)
@@ -94,6 +113,8 @@ load_input_field(Field<T,Mesh,FieldMapping>& input_field,
   std::string type_str = to_lower_copy(conf.get_value<std::string>());
   if (type_str == "constant") {
     load_constant_input_field(input_field, selection, conf.get<T>("value"));
+  } else if (type_str == "composite") {
+    load_composite_input_field(input_field, selection, conf);
   } else if (type_str == "slope") {
     std::array<double,3> origin = split_string<double,3>(conf.get<std::string>("origin"));
     std::array<double,2> slope = split_string<double,2>(conf.get<std::string>("slope"));
@@ -155,4 +176,33 @@ FieldGenerator(const std::shared_ptr<sycl::queue>& queue,
   if (!on_device) {
     field_->move_to_host();
   }
+}
+
+template<typename T,
+	 typename Mesh,
+	 MeshComponent FieldMapping>
+std::shared_ptr<FieldGeneratorModel<T,Mesh,FieldMapping>>
+FieldGeneratorModel<T,Mesh,FieldMapping>::
+create(const std::shared_ptr<Mesh>& mesh,
+       const Config& conf)
+{
+  std::string model_type = conf.get_value<std::string>();
+  if (model_type == "constant") {
+    return ConstantFieldGeneratorModel<T,Mesh,FieldMapping>::create(mesh, conf);
+  } else {
+    std::cerr << "Unknown field model type: " << std::quoted(model_type)
+	      << std::endl;
+    throw std::runtime_error("Unknown field model type.");
+  }
+}
+
+template<typename T,
+	 typename Mesh,
+	 MeshComponent FieldMapping>
+std::shared_ptr<FieldGeneratorModel<T,Mesh,FieldMapping>>
+ConstantFieldGeneratorModel<T,Mesh,FieldMapping>::
+create(const std::shared_ptr<Mesh>& mesh,
+       const Config& conf)
+{
+  return std::make_shared<ConstantFieldGeneratorModel<T,Mesh,FieldMapping>>(mesh, conf);
 }

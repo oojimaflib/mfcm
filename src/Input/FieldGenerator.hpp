@@ -32,6 +32,10 @@ private:
 
   std::shared_ptr<Field<T,Mesh,FieldMapping>> field_;
   
+  void load_composite_input_field(Field<T,Mesh,FieldMapping>& input_field,
+				  const MeshSelection<Mesh,FieldMapping>& selection,
+				  const Config& conf);
+  
   void load_constant_input_field(Field<T,Mesh,FieldMapping>& input_field,
 				 const MeshSelection<Mesh,FieldMapping>& selection,
 				 const T& value);
@@ -65,6 +69,83 @@ public:
   {
     return field_;
   }
+  
+};
+
+template<typename T,
+	 typename Mesh,
+	 MeshComponent FieldMapping>
+class FieldGeneratorModel
+{
+public:
+
+  using ValueType = T;
+  using MeshType = Mesh;
+  using FieldType = Field<ValueType,MeshType,FieldMapping>;
+
+  using MeshSelectionType = MeshSelection<MeshType,FieldMapping>;
+
+protected:
+
+  std::shared_ptr<MeshType> mesh_;
+
+  MeshSelectionType sel_;
+
+public:
+
+  FieldGeneratorModel(const std::shared_ptr<MeshType>& mesh,
+		      const Config& conf)
+    : mesh_(mesh), sel_(mesh_, conf.get_child("cells"))
+  {}
+
+  virtual ~FieldGeneratorModel(void) {}
+
+  virtual void apply(FieldType& field) = 0;
+
+  static std::shared_ptr<FieldGeneratorModel<ValueType,MeshType,FieldMapping>>
+  create(const std::shared_ptr<MeshType>& mesh,
+	 const Config& conf);
+  
+};
+
+template<typename T,
+	 typename Mesh,
+	 MeshComponent FieldMapping>
+class ConstantFieldGeneratorModel : public FieldGeneratorModel<T,Mesh,FieldMapping>
+{
+public:
+
+  using ValueType = T;
+  using MeshType = Mesh;
+  using FieldType = Field<ValueType,MeshType,FieldMapping>;
+
+private:
+
+  ValueType value_;
+
+public:
+
+  ConstantFieldGeneratorModel(const std::shared_ptr<MeshType>& mesh,
+			      const Config& conf)
+    : FieldGeneratorModel<ValueType,MeshType,FieldMapping>(mesh, conf),
+      value_(conf.get<ValueType>("value"))
+  {}
+
+  virtual ~ConstantFieldGeneratorModel(void) {}
+
+  virtual void apply(FieldType& field)
+  {
+    using Times = BinaryFieldCompoundAssignmentOperator
+      <ValueType,MeshType,FieldMapping,std::multiplies<ValueType>>;
+    Times::apply(field, 0.0, this->sel_);
+    using Plus = BinaryFieldCompoundAssignmentOperator
+      <ValueType,MeshType,FieldMapping,std::plus<ValueType>>;
+    Plus::apply(field, value_, this->sel_);
+  }
+
+  static std::shared_ptr<FieldGeneratorModel<ValueType,MeshType,FieldMapping>>
+  create(const std::shared_ptr<MeshType>& mesh,
+	 const Config& conf);
   
 };
 

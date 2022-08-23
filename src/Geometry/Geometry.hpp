@@ -662,15 +662,7 @@ public:
     : Geometry(), std::vector<std::shared_ptr<Geometry>>(vec)
   {}
 
-  GeometryCollection(const Config& config)
-    : Geometry(), std::vector<std::shared_ptr<Geometry>>()
-  {
-    if (config.count("wkt") == 1) {
-      read_wkt_geometry(config.get<std::string>("wkt"), *this);
-    } else if (config.count("source") == 1) {
-      read_gdal_geometry(config, *this);
-    }
-  }
+  GeometryCollection(const Config& config);
   
   virtual ~GeometryCollection(void) {}
   
